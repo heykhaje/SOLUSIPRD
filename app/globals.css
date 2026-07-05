@@ -1,26 +1,197 @@
 @import "tailwindcss";
+@plugin "@tailwindcss/typography";
+@import "reactflow/dist/style.css";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+/* ============================================================
+   KHAJEAI PRD & Task Generator
+   Design System — Refined Neobrutalism + Editorial Aesthetic
+   ============================================================ */
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-background: #060918;
+  --color-foreground: #f8fafc;
+  --color-surface: #0a0f25;
+
+  --font-heading: var(--font-space-grotesk);
+  --font-body: var(--font-dm-sans);
+
+  --shadow-brutal-xs: 2px 2px 0px #0a0f25;
+  --shadow-brutal-sm: 3px 3px 0px #0a0f25;
+  --shadow-brutal: 5px 5px 0px #0a0f25;
+  --shadow-brutal-lg: 8px 8px 0px #0a0f25;
+
+  /* Colored shadows */
+  --shadow-brutal-indigo: 5px 5px 0px #6366f1;
+  --shadow-brutal-coral: 5px 5px 0px #f43f5e;
+  --shadow-brutal-amber: 5px 5px 0px #f59e0b;
+  --shadow-brutal-mint: 5px 5px 0px #10b981;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+/* ============================================================
+   Base
+   ============================================================ */
+
+* { box-sizing: border-box; }
+
+html {
+  scroll-behavior: smooth;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background-color: #060918;
+  color: #f8fafc;
+  font-family: var(--font-body), system-ui, sans-serif;
 }
+
+/* ============================================================
+   Border Utilities
+   ============================================================ */
+
+.border-2\.5 { border-width: 2.5px; border-style: solid; }
+.border-3 { border-width: 3px; border-style: solid; }
+.border-t-3 { border-top-width: 3px; border-top-style: solid; }
+.border-b-3 { border-bottom-width: 3px; border-bottom-style: solid; }
+.border-l-3 { border-left-width: 3px; border-left-style: solid; }
+.border-r-3 { border-right-width: 3px; border-right-style: solid; }
+
+/* ============================================================
+   Shadow Utilities
+   ============================================================ */
+
+.shadow-brutal-xs { box-shadow: 2px 2px 0px #1e1e1e; }
+.shadow-brutal-sm { box-shadow: 3px 3px 0px #1e1e1e; }
+.shadow-brutal { box-shadow: 5px 5px 0px #1e1e1e; }
+.shadow-brutal-lg { box-shadow: 8px 8px 0px #1e1e1e; }
+
+/* Colored shadow variants */
+.shadow-brutal-indigo { box-shadow: 5px 5px 0px #6366f1; }
+.shadow-brutal-coral { box-shadow: 5px 5px 0px #f43f5e; }
+.shadow-brutal-amber { box-shadow: 5px 5px 0px #f59e0b; }
+.shadow-brutal-mint { box-shadow: 5px 5px 0px #10b981; }
+
+/* ============================================================
+   Font Utilities
+   ============================================================ */
+
+.font-heading { font-family: var(--font-heading), system-ui, sans-serif; }
+.font-body { font-family: var(--font-body), system-ui, sans-serif; }
+
+/* ============================================================
+   Custom Scrollbar
+   ============================================================ */
+
+.custom-scrollbar::-webkit-scrollbar { width: 6px; }
+.custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #c4b5a4;
+  border-radius: 99px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #a39584; }
+
+/* ============================================================
+   Selection & Focus
+   ============================================================ */
+
+::selection {
+  background-color: #a5b4fc;
+  color: #1e1e1e;
+}
+
+input:focus, textarea:focus, select:focus {
+  outline: 3px solid #6366f1;
+  outline-offset: 0px;
+}
+
+/* ============================================================
+   Decorative Utilities
+   ============================================================ */
+
+/* Noise texture overlay (subtle grain) */
+.noise-bg::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  opacity: 0.025;
+  pointer-events: none;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+  background-repeat: repeat;
+  background-size: 256px 256px;
+}
+
+/* Grid pattern */
+.grid-pattern {
+  background-image:
+    linear-gradient(rgba(0,0,0,0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0,0,0,0.03) 1px, transparent 1px);
+  background-size: 24px 24px;
+}
+
+/* Dot pattern */
+.dot-pattern {
+  background-image: radial-gradient(circle, #d6cfc4 0.8px, transparent 0.8px);
+  background-size: 20px 20px;
+}
+
+/* ============================================================
+   Animated gradient text
+   ============================================================ */
+
+.gradient-text {
+  background: linear-gradient(135deg, #6366f1, #a855f7, #ec4899, #f43f5e);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ============================================================
+   Brutal hover interaction pattern
+   ============================================================ */
+
+.brutal-hover {
+  transition: all 0.15s ease;
+}
+.brutal-hover:hover {
+  transform: translate(-2px, -2px);
+  box-shadow: 8px 8px 0px #1e1e1e;
+}
+.brutal-hover:active {
+  transform: translate(2px, 2px);
+  box-shadow: 0px 0px 0px #1e1e1e;
+}
+
+/* ============================================================
+   Typing dots animation
+   ============================================================ */
+
+@keyframes typingBounce {
+  0%, 60%, 100% { transform: translateY(0); }
+  30% { transform: translateY(-4px); }
+}
+
+.typing-dot {
+  animation: typingBounce 1.2s infinite ease-in-out;
+}
+.typing-dot:nth-child(2) { animation-delay: 0.15s; }
+.typing-dot:nth-child(3) { animation-delay: 0.3s; }
+
+/* ============================================================
+   Spinner
+   ============================================================ */
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+.brutal-spinner {
+  animation: spin 0.6s linear infinite;
+}
+
+/* ============================================================
+   Tag / Badge pulse
+   ============================================================ */
+
+@keyframes softPulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
+.pulse-soft { animation: softPulse 2s ease-in-out infinite; }

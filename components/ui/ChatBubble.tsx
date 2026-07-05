@@ -12,36 +12,48 @@ export default function ChatBubble({ role, message, timestamp }: ChatBubbleProps
   const isUser = role === 'user';
 
   return (
-    <div className={`flex ${isUser ? 'justify-end' : 'justify-start'} mb-4`}>
-      <div className={`max-w-[85%] ${isUser ? 'order-1' : 'order-1'}`}>
-        {/* Role label */}
+    <div className={`flex ${isUser ? 'justify-end' : 'justify-start'} mb-5`}>
+      <div className="max-w-[85%]">
+        {/* Avatar + Role */}
         <div
-          className={`text-xs font-heading font-bold uppercase tracking-wider mb-1.5 ${
-            isUser ? 'text-right text-neutral-500' : 'text-left text-neutral-500'
+          className={`flex items-center gap-2 mb-1.5 ${
+            isUser ? 'justify-end' : 'justify-start'
           }`}
         >
-          {isUser ? 'You' : '🤖 AI Assistant'}
+          {!isUser && (
+            <div className="w-6 h-6 rounded-lg border-2 border-[#1e1e1e] bg-indigo-300 flex items-center justify-center text-xs">
+              🤖
+            </div>
+          )}
+          <span className="text-[10px] font-heading font-bold uppercase tracking-widest text-[#a39584]">
+            {isUser ? 'You' : 'AI Assistant'}
+          </span>
+          {isUser && (
+            <div className="w-6 h-6 rounded-lg border-2 border-[#1e1e1e] bg-amber-300 flex items-center justify-center text-xs">
+              👤
+            </div>
+          )}
         </div>
 
         {/* Bubble */}
         <div
           className={`
-            border-3 border-neutral-900 p-4
+            border-2\.5 border-[#1e1e1e] p-4 rounded-xl
             font-body text-sm leading-relaxed
             ${
               isUser
-                ? 'bg-lime-200 shadow-brutal-sm'
+                ? 'bg-indigo-100 shadow-[3px_3px_0px_#6366f1]'
                 : 'bg-white shadow-brutal-sm'
             }
           `}
         >
-          {message}
+          <p className="text-[#1e1e1e] whitespace-pre-wrap">{message}</p>
         </div>
 
         {/* Timestamp */}
         {timestamp && (
           <div
-            className={`text-xs text-neutral-400 mt-1.5 font-body ${
+            className={`text-[10px] text-[#b5b0a8] mt-1.5 font-body ${
               isUser ? 'text-right' : 'text-left'
             }`}
           >

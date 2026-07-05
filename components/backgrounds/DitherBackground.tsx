@@ -8,46 +8,81 @@ export default function DitherBackground() {
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
+
+    let animFrame: number;
+    let time = 0;
 
     const resize = () => {
       canvas.width = window.innerWidth;
       canvas.height = window.innerHeight;
-      draw();
     };
 
     const draw = () => {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-      const spacing = 16;
-      const dotSize = 1.2;
+      // Layer 1: subtle grid lines
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.03)';
+      ctx.lineWidth = 0.5;
+      const gridSize = 40;
+      for (let x = 0; x <= canvas.width; x += gridSize) {
+        ctx.beginPath();
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x, canvas.height);
+        ctx.stroke();
+      }
+      for (let y = 0; y <= canvas.height; y += gridSize) {
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(canvas.width, y);
+        ctx.stroke();
+      }
 
-      ctx.fillStyle = '#d1d5db';
+      // Layer 2: dither dots at grid intersections
+      const dotSpacing = 40;
+      for (let x = 0; x <= canvas.width; x += dotSpacing) {
+        for (let y = 0; y <= canvas.height; y += dotSpacing) {
+          // Organic feel: slight wave distortion
+          const wave = Math.sin((x + time * 8) * 0.005) * Math.cos((y + time * 6) * 0.007);
+          const alpha = 0.04 + wave * 0.025;
 
-      for (let x = 0; x < canvas.width; x += spacing) {
-        for (let y = 0; y < canvas.height; y += spacing) {
-          // Dither pattern: offset every other row
-          const offsetX = (Math.floor(y / spacing) % 2) * (spacing / 2);
-
-          // Vary opacity slightly for organic dither feel
-          const noise = Math.sin(x * 0.01 + y * 0.01) * 0.3 + 0.5;
-          ctx.globalAlpha = noise * 0.4;
-
-          ctx.beginPath();
-          ctx.arc(x + offsetX, y, dotSize, 0, Math.PI * 2);
-          ctx.fill();
+          if (alpha > 0) {
+            ctx.fillStyle = `rgba(167, 139, 250, ${alpha * 1.5})`;
+            ctx.beginPath();
+            ctx.arc(x, y, 1.2, 0, Math.PI * 2);
+            ctx.fill();
+          }
         }
       }
 
-      ctx.globalAlpha = 1;
+      // Layer 3: larger accent dots (sparse)
+      const accentSpacing = 160;
+      for (let x = accentSpacing / 2; x <= canvas.width; x += accentSpacing) {
+        for (let y = accentSpacing / 2; y <= canvas.height; y += accentSpacing) {
+          const wave = Math.sin((x + time * 4) * 0.003 + (y * 0.005));
+          const alpha = 0.02 + wave * 0.015;
+          if (alpha > 0) {
+            ctx.fillStyle = `rgba(251, 113, 133, ${alpha * 2})`;
+            ctx.beginPath();
+            ctx.arc(x, y, 2.5, 0, Math.PI * 2);
+            ctx.fill();
+          }
+        }
+      }
+
+      time += 1;
+      animFrame = requestAnimationFrame(draw);
     };
 
     resize();
+    draw();
     window.addEventListener('resize', resize);
 
-    return () => window.removeEventListener('resize', resize);
+    return () => {
+      window.removeEventListener('resize', resize);
+      cancelAnimationFrame(animFrame);
+    };
   }, []);
 
   return (
