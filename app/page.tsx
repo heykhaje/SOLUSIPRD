@@ -4,6 +4,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import ReactMarkdown from 'react-markdown';
 import DitherBackground from '@/components/backgrounds/DitherBackground';
 import { useRouter } from 'next/navigation';
+import { createClient } from '@/utils/supabase/client';
 
 interface ChatMessage {
   role: 'ai' | 'user';
@@ -139,8 +140,9 @@ export default function Home() {
       handleRevise();
     }
   };
-  const handleSignOut = () => {
-    document.cookie = "solusiprd_auth=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+  const handleSignOut = async () => {
+    const supabase = createClient();
+    await supabase.auth.signOut();
     window.location.href = '/login';
   };
 

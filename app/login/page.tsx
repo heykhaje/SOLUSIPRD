@@ -2,19 +2,25 @@
 
 import React, { useState } from 'react';
 import DitherBackground from '@/components/backgrounds/DitherBackground';
+import { createClient } from '@/utils/supabase/client';
 
 export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
 
-  const handleMockGoogleLogin = () => {
+  const handleGoogleLogin = async () => {
     setIsLoading(true);
-    // Simulate network request for Google Auth
-    setTimeout(() => {
-      // Set a mock authentication cookie that lasts for 1 day
-      document.cookie = "solusiprd_auth=true; path=/; max-age=86400; SameSite=Lax";
-      // Force a full page reload to trigger middleware and redirect to home
-      window.location.href = '/';
-    }, 1500);
+    const supabase = createClient();
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: `${window.location.origin}/auth/callback`,
+      },
+    });
+
+    if (error) {
+      console.error('Error logging in with Google:', error.message);
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -35,7 +41,7 @@ export default function LoginPage() {
           </p>
 
           <button
-            onClick={handleMockGoogleLogin}
+            onClick={handleGoogleLogin}
             disabled={isLoading}
             className="w-full relative flex items-center justify-center gap-3 bg-white hover:bg-gray-100 text-[#1e1e1e] font-heading font-bold text-base py-4 px-6 rounded-xl transition-all duration-200 disabled:opacity-70 disabled:cursor-not-allowed shadow-lg hover:shadow-xl hover:-translate-y-0.5 active:translate-y-0"
           >

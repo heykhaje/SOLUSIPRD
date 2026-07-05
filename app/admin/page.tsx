@@ -1,11 +1,35 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { getAdminDashboardData } from './actions';
 
 export default function AdminDashboardPage() {
-  const [aiPrompt, setAiPrompt] = useState(
-    'Anda adalah AI asisten untuk membantu menulis PRD (Product Requirements Document)...'
-  );
+  const [metrics, setMetrics] = useState({
+    totalUsers: 0,
+    activeSubscribers: 0,
+    revenue: 0,
+    totalTokensUsed: 0
+  });
+  
+  const [profiles, setProfiles] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const result = await getAdminDashboardData();
+        if (result.success && result.data) {
+          setMetrics(result.data.metrics);
+          setProfiles(result.data.profiles);
+        }
+      } catch (err) {
+        console.error("Failed to fetch dashboard data", err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchData();
+  }, []);
 
   return (
     <div className="p-8 lg:p-12 space-y-10">
@@ -23,31 +47,29 @@ export default function AdminDashboardPage() {
       <section className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="bg-[#0a0f25]/50 backdrop-blur-xl border border-white/10 rounded-2xl p-6 shadow-[0_8px_32px_rgba(0,0,0,0.05)]">
           <h3 className="font-heading font-bold text-sm text-white/70 uppercase tracking-wider mb-2">
-            Total Pelanggan Aktif
+            Total Pengguna Terdaftar
           </h3>
           <p className="font-heading font-extrabold text-4xl text-[#f8fafc]">
-            1,284
+            {isLoading ? '...' : metrics.totalUsers.toLocaleString()}
           </p>
           <div className="mt-4 flex items-center gap-2">
-            <span className="text-emerald-400 font-bold text-xs bg-emerald-500/10 px-2 py-1 rounded-md border border-emerald-500/20">
-              +12%
+            <span className="text-indigo-400 font-bold text-xs bg-indigo-500/10 px-2 py-1 rounded-md border border-indigo-500/20">
+              Update Real-time
             </span>
-            <span className="text-xs font-body text-white/50">dari bulan lalu</span>
           </div>
         </div>
 
         <div className="bg-[#0a0f25]/50 backdrop-blur-xl border border-white/10 rounded-2xl p-6 shadow-[0_8px_32px_rgba(0,0,0,0.05)]">
           <h3 className="font-heading font-bold text-sm text-white/70 uppercase tracking-wider mb-2">
-            Pendapatan Bulan Ini (Rp)
+            Potensi Pendapatan (Rp)
           </h3>
           <p className="font-heading font-extrabold text-4xl text-[#f8fafc]">
-            45.2M
+            {isLoading ? '...' : `Rp ${(metrics.revenue / 1000000).toFixed(1)}M`}
           </p>
           <div className="mt-4 flex items-center gap-2">
             <span className="text-emerald-400 font-bold text-xs bg-emerald-500/10 px-2 py-1 rounded-md border border-emerald-500/20">
-              +8.5%
+              +{metrics.activeSubscribers} Subscriptions
             </span>
-            <span className="text-xs font-body text-white/50">dari bulan lalu</span>
           </div>
         </div>
 
@@ -56,7 +78,7 @@ export default function AdminDashboardPage() {
             Token API Terpakai
           </h3>
           <p className="font-heading font-extrabold text-4xl text-[#f8fafc]">
-            8.4M
+            {isLoading ? '...' : metrics.totalTokensUsed.toLocaleString()}
           </p>
           <div className="mt-4 flex items-center gap-2">
             <span className="text-rose-400 font-bold text-xs bg-rose-500/10 px-2 py-1 rounded-md border border-rose-500/20">
@@ -67,7 +89,7 @@ export default function AdminDashboardPage() {
         </div>
       </section>
 
-      <div className="grid grid-cols-1 xl:grid-cols-2 gap-10">
+      <div className="grid grid-cols-1 gap-10">
         {/* Tabel Pelanggan Terbaru */}
         <section className="bg-[#0a0f25]/50 backdrop-blur-xl border border-white/10 rounded-2xl shadow-[0_8px_32px_rgba(0,0,0,0.05)] overflow-hidden flex flex-col">
           <div className="px-6 py-5 border-b border-white/10 bg-[#1e293b]/50 backdrop-blur-md">
@@ -86,65 +108,54 @@ export default function AdminDashboardPage() {
                 </tr>
               </thead>
               <tbody className="font-body text-sm divide-y divide-white/5">
-                {[
-                  { name: 'Budi Santoso', date: '05 Jul 2026', status: 'Aktif' },
-                  { name: 'Sarah Wijaya', date: '04 Jul 2026', status: 'Aktif' },
-                  { name: 'Alex Pradana', date: '02 Jul 2026', status: 'Aktif' },
-                  { name: 'Diana Fitri', date: '01 Jul 2026', status: 'Aktif' },
-                ].map((user, idx) => (
-                  <tr key={idx} className="hover:bg-white/5 transition-colors">
-                    <td className="p-4 font-bold text-[#f8fafc]">{user.name}</td>
-                    <td className="p-4 text-white/70">{user.date}</td>
-                    <td className="p-4">
-                      <span className="inline-flex px-2 py-1 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 font-bold text-[10px] rounded uppercase tracking-wider">
-                        {user.status}
-                      </span>
-                    </td>
+                {isLoading ? (
+                  <tr>
+                    <td colSpan={4} className="p-8 text-center text-white/50">Loading data...</td>
+                  </tr>
+                ) : profiles.length === 0 ? (
+                  <tr>
+                    <td colSpan={4} className="p-8 text-center text-white/50">Belum ada pelanggan terdaftar.</td>
+                  </tr>
+                ) : (
+                  profiles.map((user, idx) => (
+                    <tr key={idx} className="hover:bg-white/5 transition-colors">
+                      <td className="p-4 font-bold text-[#f8fafc] flex items-center gap-3">
+                        {user.avatar_url ? (
+                          <img src={user.avatar_url} alt={user.full_name} className="w-8 h-8 rounded-full" />
+                        ) : (
+                          <div className="w-8 h-8 rounded-full bg-indigo-500/20 border border-indigo-500/50 flex items-center justify-center text-indigo-400 text-xs">
+                            {user.full_name?.charAt(0) || user.email?.charAt(0) || '?'}
+                          </div>
+                        )}
+                        <div className="flex flex-col">
+                          <span>{user.full_name || 'Tanpa Nama'}</span>
+                          <span className="text-xs font-normal text-white/40">{user.email}</span>
+                        </div>
+                      </td>
+                      <td className="p-4 text-white/70">
+                        {new Date(user.created_at).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })}
+                      </td>
+                      <td className="p-4">
+                        <span className={`inline-flex px-2 py-1 border font-bold text-[10px] rounded uppercase tracking-wider ${
+                          user.subscription_status === 'active' 
+                            ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' 
+                            : 'bg-white/5 border-white/10 text-white/50'
+                        }`}>
+                          {user.subscription_status || 'Inactive'}
+                        </span>
+                      </td>
                     <td className="p-4">
                       <div className="flex gap-2">
                         <button className="px-3 py-1.5 bg-[#1e293b] hover:bg-[#334155] border border-white/10 rounded-lg text-xs font-bold transition-colors">
                           Detail
                         </button>
-                        <button className="px-3 py-1.5 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/20 text-rose-400 rounded-lg text-xs font-bold transition-colors">
-                          Blokir
-                        </button>
                       </div>
                     </td>
                   </tr>
-                ))}
+                ))
+                )}
               </tbody>
             </table>
-          </div>
-        </section>
-
-        {/* Konfigurasi AI (Preview) */}
-        <section className="bg-[#0a0f25]/50 backdrop-blur-xl border border-white/10 rounded-2xl shadow-[0_8px_32px_rgba(0,0,0,0.05)] overflow-hidden flex flex-col">
-          <div className="px-6 py-5 border-b border-white/10 bg-[#1e293b]/50 backdrop-blur-md">
-            <h3 className="font-heading font-extrabold text-lg text-[#f8fafc]">
-              Konfigurasi AI
-            </h3>
-          </div>
-          <div className="p-6 flex flex-col gap-4">
-            <div className="flex flex-col gap-2">
-              <label className="font-heading font-bold text-sm text-[#f8fafc] uppercase tracking-wide">
-                System Prompt Utama
-              </label>
-              <textarea
-                value={aiPrompt}
-                onChange={(e) => setAiPrompt(e.target.value)}
-                rows={8}
-                className="w-full bg-[#060918]/60 backdrop-blur-md border border-white/10 focus:border-indigo-400 rounded-xl p-4 font-body text-sm text-[#f8fafc] placeholder:text-white/40 shadow-inner focus:outline-none transition-colors resize-none custom-scrollbar"
-              />
-              <p className="text-xs font-body text-white/50">
-                Prompt ini akan di-inject ke setiap sesi baru pembuatan PRD oleh user.
-              </p>
-            </div>
-            
-            <div className="mt-2 flex justify-end">
-              <button className="px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-heading font-bold text-sm rounded-xl shadow-lg transition-colors">
-                Simpan Konfigurasi
-              </button>
-            </div>
           </div>
         </section>
       </div>

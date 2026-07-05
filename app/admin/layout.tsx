@@ -4,6 +4,7 @@ import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import DitherBackground from '@/components/backgrounds/DitherBackground';
+import { createClient } from '@/utils/supabase/client';
 
 const navigation = [
   { name: 'Overview', href: '/admin' },
@@ -19,8 +20,9 @@ export default function AdminLayout({
 }) {
   const pathname = usePathname();
 
-  const handleSignOut = () => {
-    document.cookie = "solusiprd_auth=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+  const handleSignOut = async () => {
+    const supabase = createClient();
+    await supabase.auth.signOut();
     window.location.href = '/login';
   };
 
