@@ -127,7 +127,7 @@ function GlassNode({ data }: NodeProps<GlassNodeData>) {
             fontWeight: 700,
             fontSize: 13,
             letterSpacing: '-0.01em',
-            color: isDark ? s.textDark : s.textLight,
+            color: isDark ? s.textDark : s.textDark,
           }}
         >
           {data.label}
