@@ -70,7 +70,7 @@ function GlassNode({ data }: NodeProps<GlassNodeData>) {
         border: s.border,
         background: isDark
           ? `linear-gradient(135deg, ${s.bgDark} 0%, rgba(10, 15, 37, 0.8) 100%)`
-          : `linear-gradient(135deg, ${s.bgLight} 0%, rgba(255, 255, 255, 0.4) 100%)`,
+          : `linear-gradient(135deg, ${s.bgDark} 0%, rgba(255, 255, 255, 0.4) 100%)`,
         backdropFilter: 'blur(12px)',
         boxShadow: isDark 
           ? '0 8px 32px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.05)'
