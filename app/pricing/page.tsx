@@ -57,8 +57,8 @@ export default function PricingPage() {
       }
 
       // Open Midtrans Snap UI
-      if (window.snap) {
-        window.snap.pay(result.token, {
+      if ((window as any).snap) {
+        (window as any).snap.pay(result.token, {
           onSuccess: function (result: any) {
             console.log('Payment success:', result);
             alert('Pembayaran berhasil! Sistem sedang mengkonfirmasi langganan Anda.');
