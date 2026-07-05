@@ -68,7 +68,7 @@ async function generateWithRetry(
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { userPrompt } = body;
+    const { prompt: userPrompt, tier } = body;
 
     if (!userPrompt || typeof userPrompt !== "string" || !userPrompt.trim()) {
       return NextResponse.json(
@@ -87,7 +87,16 @@ export async function POST(request: Request) {
     }
 
     const ai = new GoogleGenerativeAI(apiKey);
-    const fullPrompt = `${SYSTEM_PROMPT}\n\nIde Aplikasi:\n${userPrompt}`;
+    
+    // Add extra instructions based on tier
+    let tierInstruction = "";
+    if (tier === 'max') {
+      tierInstruction = "INI ADALAH PELANGGAN TINGKAT MAX. Berikan detail teknis terdalam, spesifikasi paling komprehensif, arsitektur sistem lanjutan, dan analisa edge case paling lengkap. Hasilkan PRD terbaik yang pernah ada.";
+    } else if (tier === 'pro') {
+      tierInstruction = "INI ADALAH PELANGGAN TINGKAT PRO. Berikan detail yang sangat baik dan terstruktur rapi dengan edge cases yang jelas.";
+    }
+
+    const fullPrompt = `${SYSTEM_PROMPT}\n${tierInstruction}\n\nIde Aplikasi:\n${userPrompt}`;
     const fullContent = await generateWithRetry(ai, fullPrompt);
 
     if (!fullContent) {

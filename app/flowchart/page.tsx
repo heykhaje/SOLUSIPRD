@@ -128,7 +128,7 @@ export default function FlowchartPage() {
         
         <footer className="w-full py-6 text-center relative z-10 flex-shrink-0">
           <p className="font-heading text-xs font-bold text-white/40 tracking-wider">
-            &copy; 2026 by Khaje&apos;Studio
+            &copy; 2026 by Adji.DEV
           </p>
         </footer>
       </div>

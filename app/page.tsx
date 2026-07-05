@@ -14,11 +14,33 @@ interface ChatMessage {
 export default function Home() {
   const [userPrompt, setUserPrompt] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [loadingMessageIndex, setLoadingMessageIndex] = useState(0);
   const [prdResult, setPrdResult] = useState<string | null>(null);
   const [flowchartResult, setFlowchartResult] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isCopiedPrd, setIsCopiedPrd] = useState(false);
   const router = useRouter();
+
+  const loadingMessages = [
+    "Menghubungkan...",
+    "Menganalisa ide brilian Anda...",
+    "Menyusun struktur dokumen PRD...",
+    "Merancang User Flow...",
+    "Melakukan sentuhan akhir...",
+    "Sedikit lagi selesai..."
+  ];
+
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+    if (isLoading) {
+      interval = setInterval(() => {
+        setLoadingMessageIndex((prev) => (prev + 1) % loadingMessages.length);
+      }, 3000);
+    } else {
+      setLoadingMessageIndex(0);
+    }
+    return () => clearInterval(interval);
+  }, [isLoading, loadingMessages.length]);
 
   // Revision chat state
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
@@ -60,11 +82,45 @@ export default function Home() {
     setIsLoading(true);
     setError(null);
 
+    // Paywall check
+    const supabase = createClient();
+    const { data: userData } = await supabase.auth.getUser();
+    
+    let isSubscribed = false;
+    let subscriptionTier = 'free';
+
+    if (userData.user) {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('subscription_status')
+        .eq('id', userData.user.id)
+        .single();
+      
+      const adminEmail = 'adjiprasetyo970@gmail.com'; // Admin always bypasses paywall
+      const allowedTiers = ['basic', 'pro', 'max'];
+      
+      if (userData.user.email === adminEmail) {
+        isSubscribed = true;
+        subscriptionTier = 'max'; // Admin gets max tier by default
+      } else if (profile?.subscription_status && allowedTiers.includes(profile.subscription_status)) {
+        isSubscribed = true;
+        subscriptionTier = profile.subscription_status;
+      }
+      
+      if (!isSubscribed) {
+        router.push('/pricing');
+        return;
+      }
+    } else {
+      router.push('/login');
+      return;
+    }
+
     try {
       const res = await fetch('/api/generate-prd', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userPrompt }),
+        body: JSON.stringify({ prompt: userPrompt, tier: subscriptionTier }),
       });
 
       const data = await res.json();
@@ -235,7 +291,7 @@ export default function Home() {
                     {isLoading ? (
                       <>
                         <span className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                        Generating PRD...
+                        <span className="animate-pulse">{loadingMessages[loadingMessageIndex]}</span>
                       </>
                     ) : (
                       'Generate PRD'
@@ -381,7 +437,7 @@ export default function Home() {
         
         <footer className="w-full py-6 text-center relative z-10 flex-shrink-0">
           <p className="font-heading text-xs font-bold text-white/40 tracking-wider">
-            &copy; 2026 by Khaje&apos;Studio
+            &copy; 2026 by Adji.DEV
           </p>
         </footer>
       </div>

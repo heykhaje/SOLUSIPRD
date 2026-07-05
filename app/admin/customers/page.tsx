@@ -116,7 +116,7 @@ export default function CustomersPage() {
       
       <footer className="w-full pt-8 pb-4 text-center">
         <p className="font-heading text-xs font-bold text-white/40 tracking-wider">
-          &copy; 2026 by Khaje&apos;Studio
+          &copy; 2026 by Adji.DEV
         </p>
       </footer>
     </div>
