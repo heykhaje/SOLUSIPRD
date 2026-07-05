@@ -1,3 +1,4 @@
+// @ts-ignore
 import midtransClient from 'midtrans-client';
 
 // Initialize Midtrans Snap client
