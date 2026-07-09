@@ -118,9 +118,11 @@ export default function PricingPage() {
 
   return (
     <main className="min-h-screen relative flex items-center justify-center p-4 py-16">
-      {/* Midtrans Snap JS - Using Sandbox URL. Change to app.midtrans.com for production */}
+      {/* Midtrans Snap JS - Dynamic based on environment */}
       <Script 
-        src="https://app.sandbox.midtrans.com/snap/snap.js" 
+        src={process.env.NEXT_PUBLIC_MIDTRANS_IS_PRODUCTION === 'true' 
+          ? "https://app.midtrans.com/snap/snap.js" 
+          : "https://app.sandbox.midtrans.com/snap/snap.js"} 
         data-client-key={process.env.NEXT_PUBLIC_MIDTRANS_CLIENT_KEY}
         strategy="lazyOnload"
       />
