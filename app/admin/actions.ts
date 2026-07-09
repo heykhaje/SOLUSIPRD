@@ -47,3 +47,24 @@ export async function getAdminDashboardData() {
     return { success: false, error: err.message };
   }
 }
+
+export async function updateUserSubscription(userId: string, status: string | null) {
+  const supabase = createAdminClient();
+
+  try {
+    const { error } = await supabase
+      .from('profiles')
+      .update({ subscription_status: status })
+      .eq('id', userId);
+
+    if (error) {
+      console.error('Error updating subscription:', error);
+      return { success: false, error: error.message };
+    }
+
+    return { success: true };
+  } catch (err: any) {
+    console.error('Unexpected error in updateUserSubscription:', err);
+    return { success: false, error: err.message };
+  }
+}
