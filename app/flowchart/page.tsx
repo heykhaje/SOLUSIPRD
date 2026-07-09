@@ -39,7 +39,7 @@ export default function FlowchartPage() {
           <div className="max-w-[1800px] mx-auto flex items-center justify-between">
             <div className="flex items-center gap-3">
               <button onClick={handleBack} className="flex items-center gap-0 hover:opacity-80 transition-opacity">
-                <div className="flex items-center justify-center -mt-1 -mr-2">
+                <div className="flex items-center justify-center -mt-1 mr-1">
                   <img src="/logo.png" alt="Logo" className="w-12 h-12 object-contain" />
                 </div>
                 <div>

@@ -211,7 +211,7 @@ export default function Home() {
         <header className="w-full bg-[#0a0f25]/40 backdrop-blur-md border-b border-white/10 px-6 py-4 flex-shrink-0 sticky top-0 z-50">
           <div className="max-w-[1800px] mx-auto flex items-center justify-between">
             <div className="flex items-center gap-0">
-              <div className="flex items-center justify-center -mt-1 -mr-2">
+              <div className="flex items-center justify-center -mt-1 mr-1">
                 <img src="/logo.png" alt="Logo" className="w-12 h-12 object-contain" />
               </div>
               <div>
