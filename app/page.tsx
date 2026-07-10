@@ -171,7 +171,7 @@ export default function Home() {
     }
 
     // Pass the structural context along with the prompt to ensure PRD follows the mind map
-    const combinedPrompt = `MIND MAP TERKINI:n${JSON.stringify(structureResult, null, 2)}nnIDE AWAL: ${userPrompt}`;
+    const combinedPrompt = `MIND MAP TERKINI:\n${JSON.stringify(structureResult, null, 2)}\n\nIDE AWAL: ${userPrompt}`;
 
     try {
       const res = await fetch('/api/generate-prd', {
@@ -338,7 +338,7 @@ export default function Home() {
         </header>
 
         {/* Main Content */}
-        <main className="flex-1 flex flex-col p-6 lg:p-10 min-h-[calc(100vh-80px)]">
+        <main className={`flex-1 flex flex-col min-h-[calc(100vh-80px)] ${step === 2 ? 'p-0' : 'p-6 lg:p-10'}`}>
           {step === 1 && (
             /* Ideation Form State */
             <div className="flex-1 w-full max-w-2xl mx-auto flex flex-col justify-center animate-in fade-in duration-300">
@@ -396,7 +396,7 @@ export default function Home() {
 
           {step === 2 && structureResult && (
             <div className="w-full h-full flex flex-col flex-1 animate-in fade-in duration-300">
-              <div className="flex-1 bg-[#0a0f25]/50 backdrop-blur-xl border border-white/10 shadow-[0_8px_32px_rgba(0,0,0,0.05)] rounded-2xl overflow-hidden flex flex-col relative min-h-[600px]">
+              <div className="flex-1 bg-[#0a0f25]/50 backdrop-blur-xl overflow-hidden flex flex-col relative min-h-[calc(100vh-80px)] border-t border-white/10">
                 <div className="absolute inset-0">
                   <StructureDiagram data={structureResult} />
                 </div>

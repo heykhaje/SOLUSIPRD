@@ -7,12 +7,12 @@ const SYSTEM_PROMPT = `Anda adalah Product Manager senior. Ubah ide mentah ini m
 2) User Roles
 3) Spesifikasi Fitur
 
-ATURAN FORMAT OUTPUT:
+ATURAN FORMAT OUTPUT (SANGAT PENTING):
 - Berikan dokumen PRD dalam format Markdown standar yang rapi.
-- Setelah selesai menulis PRD, tambahkan pemisah tepat seperti ini:
+- SETELAH SELESAI MENULIS PRD, ANDA WAJIB MENAMBAHKAN PEMISAH TEPAT SEPERTI INI TANPA KUTIP ATAU FORMAT LAIN:
 ---TASKS_SEPARATOR---
-- Setelah pemisah tersebut, buatlah DAFTAR TUGAS (Task List) yang sangat detail dalam format Markdown (gunakan checkbox "- [ ]"). 
-- Task List ini harus berisi langkah-langkah teknis dan fungsional yang siap dikerjakan oleh developer atau AI Coder untuk mewujudkan PRD tersebut.
+- WAJIB: Setelah pemisah tersebut, buatlah DAFTAR TUGAS (Task List) teknis dalam format Markdown (gunakan checkbox "- [ ]"). 
+- Kegagalan menyertakan "---TASKS_SEPARATOR---" akan membuat sistem error. Jangan sampai lupa!
 - Bagikan task berdasarkan fitur atau halaman (misal: "### Autentikasi", "### Database", dll).`;
 
 async function delay(ms: number) {
@@ -163,6 +163,18 @@ export async function POST(request: Request) {
       const parts = fullContent.split(separator);
       prdContent = parts[0].trim();
       taskContent = parts[1].trim();
+    } else {
+      // Fallback: If AI fails to add separator, try to split by common headings
+      const fallbackRegex = /\n(#{1,3}\s*(Task List|Daftar Tugas|Tasks|Development Tasks?))/i;
+      const match = fullContent.match(fallbackRegex);
+      if (match && match.index !== undefined) {
+        prdContent = fullContent.substring(0, match.index).trim();
+        taskContent = fullContent.substring(match.index).trim();
+      } else {
+        // If absolutely no tasks found, just put everything in PRD and set dummy task
+        prdContent = fullContent;
+        taskContent = "- [ ] AI gagal memisahkan Task List. Anda bisa membaca Tasks di akhir dokumen PRD.";
+      }
     }
 
     // 8. Return Response
