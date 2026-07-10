@@ -265,7 +265,7 @@ function parseStructureToFlow(data?: StructureData | null): { nodes: Node[]; edg
 
   const NODE_HEIGHT = 80;
   const X_SPACING = 380;
-  const Y_SPACING = 180;
+  const Y_SPACING = 280; // Diperbesar dari 180 agar tidak mepet
 
   // Root Node
   nodes.push({
