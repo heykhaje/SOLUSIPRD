@@ -29,11 +29,8 @@ ATURAN FORMAT OUTPUT:
 - JANGAN sertakan markdown backticks (seperti \`\`\`json). Mulai langsung dengan tanda kurung kurawal {.`;
 
 const MODEL_PRIORITY = [
-  "gemini-1.5-flash-latest",
-  "gemini-1.5-pro-latest",
   "gemini-1.5-flash",
   "gemini-1.5-pro",
-  "gemini-1.0-pro",
 ];
 
 async function delay(ms: number) {
@@ -118,10 +115,12 @@ export async function POST(request: Request) {
     let userMessage = error?.message || "An unexpected error occurred.";
     if (status === 429) {
       userMessage = "Kuota API Gemini Anda sedang habis. Silakan tunggu 1-2 menit.";
+    } else if (status === 503) {
+      userMessage = "Server AI Google sedang kelebihan beban (overloaded) secara global. Silakan tunggu beberapa saat dan coba tekan tombol lagi.";
     }
     return NextResponse.json(
       { error: userMessage },
-      { status: status === 429 ? 429 : 500 }
+      { status: status || 500 }
     );
   }
 }

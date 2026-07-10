@@ -16,11 +16,8 @@ ATURAN FORMAT OUTPUT:
 - Bagikan task berdasarkan fitur atau halaman (misal: "### Autentikasi", "### Database", dll).`;
 
 const MODEL_PRIORITY = [
-  "gemini-1.5-flash-latest",
-  "gemini-1.5-pro-latest",
   "gemini-1.5-flash",
   "gemini-1.5-pro",
-  "gemini-1.0-pro",
 ];
 
 async function delay(ms: number) {
@@ -179,11 +176,13 @@ export async function POST(request: Request) {
 
     if (status === 429) {
       userMessage = "Kuota API Gemini Anda sedang habis (rate limit). Silakan tunggu 1-2 menit lalu coba lagi.";
+    } else if (status === 503) {
+      userMessage = "Server AI Google sedang kelebihan beban (overloaded) secara global. Silakan tunggu beberapa saat dan coba tekan tombol lagi.";
     }
 
     return NextResponse.json(
       { error: userMessage },
-      { status: status === 429 ? 429 : 500 }
+      { status: status || 500 }
     );
   }
 }
