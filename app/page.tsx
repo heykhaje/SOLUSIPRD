@@ -338,7 +338,7 @@ export default function Home() {
         </header>
 
         {/* Main Content */}
-        <main className={`flex-1 flex flex-col min-h-[calc(100vh-80px)] ${step === 2 ? 'p-0' : 'p-6 lg:p-10'}`}>
+        <main className="flex-1 flex flex-col p-6 lg:p-10 min-h-[calc(100vh-80px)]">
           {step === 1 && (
             /* Ideation Form State */
             <div className="flex-1 w-full max-w-2xl mx-auto flex flex-col justify-center animate-in fade-in duration-300">
@@ -396,7 +396,7 @@ export default function Home() {
 
           {step === 2 && structureResult && (
             <div className="w-full h-full flex flex-col flex-1 animate-in fade-in duration-300">
-              <div className="flex-1 bg-[#0a0f25]/50 backdrop-blur-xl overflow-hidden flex flex-col relative min-h-[calc(100vh-80px)] border-t border-white/10">
+              <div className="flex-1 bg-[#0a0f25]/50 backdrop-blur-xl border border-white/10 shadow-[0_8px_32px_rgba(0,0,0,0.05)] rounded-3xl overflow-hidden flex flex-col relative min-h-[calc(100vh-140px)]">
                 <div className="absolute inset-0">
                   <StructureDiagram data={structureResult} />
                 </div>
