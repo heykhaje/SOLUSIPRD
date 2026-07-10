@@ -82,10 +82,9 @@ export async function POST(request: Request) {
     }
 
     // 3. Fetch User Data from Supabase
-    // Using subscription_status as 'tier' based on existing database schema
     const { data: profile, error: profileError } = await supabase
       .from('profiles')
-      .select('subscription_status, usage_count')
+      .select('subscription_status, tokens_used')
       .eq('id', user.id)
       .single();
 
@@ -95,7 +94,7 @@ export async function POST(request: Request) {
     }
 
     const tier = profile?.subscription_status || 'free';
-    const usageCount = profile?.usage_count || 0;
+    const tokensUsed = profile?.tokens_used || 0;
 
     // Admin override (assuming admin email bypasses limits)
     const isAdmin = user.email === 'adjiprasetyo970@gmail.com';
@@ -108,8 +107,7 @@ export async function POST(request: Request) {
     else if (effectiveTier === 'max') limit = Infinity;
     
     // If user is 'free' or unlisted tier, we might block them or give them 0 limit
-    // Assuming 'free' users aren't allowed at all based on requirements
-    if (effectiveTier !== 'max' && usageCount >= limit) {
+    if (effectiveTier !== 'max' && tokensUsed >= limit) {
       return NextResponse.json(
         { 
           error: "LIMIT_REACHED", 
@@ -145,7 +143,7 @@ export async function POST(request: Request) {
     if (effectiveTier !== 'max') {
       const { error: updateError } = await supabase
         .from('profiles')
-        .update({ usage_count: usageCount + 1 })
+        .update({ tokens_used: tokensUsed + 1 })
         .eq('id', user.id);
         
       if (updateError) {
