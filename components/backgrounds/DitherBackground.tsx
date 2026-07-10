@@ -13,31 +13,41 @@ export default function DitherBackground() {
 
     let animFrame: number;
     let time = 0;
+    
+    // FPS Limiter
+    const fps = 24; // Lower FPS for background effects significantly reduces CPU/GPU load
+    const interval = 1000 / fps;
+    let then = performance.now();
 
     const resize = () => {
       canvas.width = window.innerWidth;
       canvas.height = window.innerHeight;
     };
 
-    const draw = () => {
+    const draw = (now: number) => {
+      animFrame = requestAnimationFrame(draw);
+
+      const delta = now - then;
+      if (delta < interval) return;
+      then = now - (delta % interval);
+
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
       // Layer 1: subtle grid lines
       ctx.strokeStyle = 'rgba(255, 255, 255, 0.03)';
       ctx.lineWidth = 0.5;
       const gridSize = 40;
+      
+      ctx.beginPath();
       for (let x = 0; x <= canvas.width; x += gridSize) {
-        ctx.beginPath();
         ctx.moveTo(x, 0);
         ctx.lineTo(x, canvas.height);
-        ctx.stroke();
       }
       for (let y = 0; y <= canvas.height; y += gridSize) {
-        ctx.beginPath();
         ctx.moveTo(0, y);
         ctx.lineTo(canvas.width, y);
-        ctx.stroke();
       }
+      ctx.stroke();
 
       // Layer 2: dither dots at grid intersections
       const dotSpacing = 40;
@@ -49,9 +59,8 @@ export default function DitherBackground() {
 
           if (alpha > 0) {
             ctx.fillStyle = `rgba(167, 139, 250, ${alpha * 1.5})`;
-            ctx.beginPath();
-            ctx.arc(x, y, 1.2, 0, Math.PI * 2);
-            ctx.fill();
+            // OPTIMIZATION: fillRect is massively faster than beginPath -> arc -> fill
+            ctx.fillRect(x - 1, y - 1, 2, 2); 
           }
         }
       }
@@ -64,23 +73,32 @@ export default function DitherBackground() {
           const alpha = 0.02 + wave * 0.015;
           if (alpha > 0) {
             ctx.fillStyle = `rgba(251, 113, 133, ${alpha * 2})`;
-            ctx.beginPath();
-            ctx.arc(x, y, 2.5, 0, Math.PI * 2);
-            ctx.fill();
+            // OPTIMIZATION: fillRect instead of arc for large dots too (5x5 pixels)
+            ctx.fillRect(x - 2.5, y - 2.5, 5, 5);
           }
         }
       }
 
-      time += 1;
-      animFrame = requestAnimationFrame(draw);
+      time += 1.5; // Compensate time speed due to lower FPS
     };
 
     resize();
-    draw();
-    window.addEventListener('resize', resize);
+    animFrame = requestAnimationFrame(draw);
+
+    // Debounce resize to prevent freeze on mobile scroll (URL bar hide/show)
+    let resizeTimeout: NodeJS.Timeout;
+    const handleResize = () => {
+      clearTimeout(resizeTimeout);
+      resizeTimeout = setTimeout(() => {
+        resize();
+      }, 200);
+    };
+
+    window.addEventListener('resize', handleResize);
 
     return () => {
-      window.removeEventListener('resize', resize);
+      window.removeEventListener('resize', handleResize);
+      clearTimeout(resizeTimeout);
       cancelAnimationFrame(animFrame);
     };
   }, []);
