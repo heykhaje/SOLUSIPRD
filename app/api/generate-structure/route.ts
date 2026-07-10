@@ -40,13 +40,13 @@ async function generateWithRetry(
 
   for (let attempt = 0; attempt <= maxRetries; attempt++) {
     try {
-      console.log(`Trying DeepSeek API for JSON Structure (attempt ${attempt + 1})`);
+      console.log(`Trying Groq API for JSON Structure (attempt ${attempt + 1})`);
       const completion = await openai.chat.completions.create({
         messages: [
           { role: "system", content: SYSTEM_PROMPT },
           { role: "user", content: `Ide Aplikasi:\n${prompt}` }
         ],
-        model: "deepseek-chat",
+        model: "llama-3.3-70b-versatile",
         response_format: { type: "json_object" }
       });
       return completion.choices[0].message.content || "";
@@ -76,14 +76,14 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "userPrompt is required." }, { status: 400 });
     }
 
-    const apiKey = process.env.DEEPSEEK_API_KEY;
+    const apiKey = process.env.GROQ_API_KEY;
 
     if (!apiKey) {
-      return NextResponse.json({ error: "DEEPSEEK_API_KEY is not configured." }, { status: 500 });
+      return NextResponse.json({ error: "GROQ_API_KEY is not configured." }, { status: 500 });
     }
 
     const openai = new OpenAI({
-      baseURL: 'https://api.deepseek.com',
+      baseURL: 'https://api.groq.com/openai/v1',
       apiKey: apiKey
     });
     
@@ -100,13 +100,13 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "AI failed to generate a valid JSON structure." }, { status: 500 });
     }
   } catch (error: any) {
-    console.error("Error generating Structure with DeepSeek:", error);
+    console.error("Error generating Structure with Groq:", error);
     const status = error?.status || 0;
     let userMessage = error?.message || "An unexpected error occurred.";
     if (status === 429) {
-      userMessage = "Kuota API DeepSeek Anda sedang habis. Silakan isi ulang saldo.";
+      userMessage = "Kuota API Groq Anda sedang habis. Silakan isi ulang saldo.";
     } else if (status === 503 || status === 500) {
-      userMessage = "Server AI DeepSeek sedang sibuk. Silakan tunggu beberapa saat.";
+      userMessage = "Server AI Groq sedang sibuk. Silakan tunggu beberapa saat.";
     }
     return NextResponse.json(
       { error: userMessage },
