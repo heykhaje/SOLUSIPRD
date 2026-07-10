@@ -402,7 +402,7 @@ export default function Home() {
                 </div>
                 
                 {/* Overlay Lanjutkan Button */}
-                <div className="absolute top-6 right-6 z-10 flex gap-3">
+                <div className="fixed bottom-8 right-8 z-[60] flex gap-3 shadow-2xl">
                   {error && (
                     <div className="px-4 py-2 bg-rose-500/90 text-white rounded-xl font-body text-sm shadow-lg flex items-center justify-center mr-2">
                       {error}
@@ -566,12 +566,13 @@ export default function Home() {
             </div>
           )}
         </main>
-        
-        <footer className="w-full py-6 text-center relative z-10 flex-shrink-0">
-          <p className="font-heading text-xs font-bold text-white/40 tracking-wider">
-            &copy; 2026 by Adji.DEV
-          </p>
-        </footer>
+        {step !== 2 && (
+          <footer className="w-full py-6 text-center relative z-10 flex-shrink-0">
+            <p className="font-heading text-xs font-bold text-white/40 tracking-wider">
+              &copy; 2026 by Adji.DEV
+            </p>
+          </footer>
+        )}
       </div>
     </div>
   );

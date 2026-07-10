@@ -335,8 +335,22 @@ function FlowInner({ data }: StructureDiagramProps) {
   const { nodes, edges } = useMemo(() => parseStructureToFlow(data), [data]);
 
   return (
-    <ReactFlow
-      nodes={nodes}
+    <>
+      <style>{`
+        .react-flow__controls-button {
+          background-color: #1e293b !important;
+          border-bottom: 1px solid rgba(255,255,255,0.1) !important;
+          border-radius: 4px;
+        }
+        .react-flow__controls-button:hover {
+          background-color: #334155 !important;
+        }
+        .react-flow__controls-button path {
+          fill: #cbd5e1 !important;
+        }
+      `}</style>
+      <ReactFlow
+        nodes={nodes}
       edges={edges}
       nodeTypes={nodeTypes}
       fitView
@@ -361,6 +375,7 @@ function FlowInner({ data }: StructureDiagramProps) {
         }}
       />
     </ReactFlow>
+    </>
   );
 }
 
