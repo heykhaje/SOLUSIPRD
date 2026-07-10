@@ -83,11 +83,11 @@ export async function POST(request: Request) {
       .from('profiles')
       .select('subscription_status, tokens_used')
       .eq('id', user.id)
-      .single();
+      .maybeSingle();
 
     if (profileError) {
       console.error("Error fetching profile:", profileError);
-      return NextResponse.json({ error: "Failed to fetch user profile." }, { status: 500 });
+      // We don't block the user, just default to free
     }
 
     const tier = profile?.subscription_status || 'free';

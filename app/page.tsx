@@ -152,7 +152,7 @@ export default function Home() {
         .from('profiles')
         .select('subscription_status')
         .eq('id', userData.user.id)
-        .single();
+        .maybeSingle();
       
       const adminEmail = 'adjiprasetyo970@gmail.com';
       const allowedTiers = ['basic', 'pro', 'max'];
