@@ -3,25 +3,37 @@
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import DitherBackground from '@/components/backgrounds/DitherBackground';
-import UserFlowDiagram from '@/components/UserFlowDiagram';
+import ReactMarkdown from 'react-markdown';
 
-export default function FlowchartPage() {
+export default function TasksPage() {
   const router = useRouter();
-  const [flowchart, setFlowchart] = useState<string | null>(null);
-  const [showCode, setShowCode] = useState(false);
+  const [tasks, setTasks] = useState<string | null>(null);
   const [isCopied, setIsCopied] = useState(false);
 
   useEffect(() => {
-    const stored = localStorage.getItem('solusiprd_flowchart');
-    if (stored) setFlowchart(stored);
+    const stored = localStorage.getItem('solusiprd_flowchart'); // still using same key for compatibility
+    if (stored) setTasks(stored);
   }, []);
 
   const handleCopy = async () => {
-    if (flowchart) {
-      const mermaidBlock = '```mermaid\n' + flowchart + '\n```';
-      await navigator.clipboard.writeText(mermaidBlock);
+    if (tasks) {
+      await navigator.clipboard.writeText(tasks);
       setIsCopied(true);
       setTimeout(() => setIsCopied(false), 2000);
+    }
+  };
+
+  const handleDownload = () => {
+    if (tasks) {
+      const blob = new Blob([tasks], { type: 'text/markdown' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `Tasks-${new Date().getTime()}.md`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
     }
   };
 
@@ -53,23 +65,20 @@ export default function FlowchartPage() {
               </button>
             </div>
             <div className="flex items-center gap-3">
-              {flowchart && (
+              {tasks && (
                 <>
                   <button
-                    onClick={() => setShowCode(!showCode)}
-                    className={`text-xs font-heading font-bold uppercase tracking-wider px-3 py-1.5 rounded-lg border transition-colors ${
-                      showCode
-                        ? 'bg-indigo-600 text-white border-indigo-600'
-                        : 'bg-[#1e293b]/40 backdrop-blur-md border-white/10 text-[#f8fafc] hover:border-indigo-400'
-                    }`}
+                    onClick={handleDownload}
+                    className="text-xs font-heading font-bold uppercase tracking-wider px-3 py-1.5 rounded-lg bg-[#1e293b]/40 backdrop-blur-md border border-white/10 text-[#f8fafc] hover:border-indigo-400 transition-colors flex items-center gap-1.5"
                   >
-                    {showCode ? 'Diagram' : 'Code'}
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                    Download .md
                   </button>
                   <button
                     onClick={handleCopy}
-                    className="text-xs font-heading font-bold uppercase tracking-wider px-3 py-1.5 rounded-lg bg-[#1e293b]/40 backdrop-blur-md border border-white/10 text-[#f8fafc] hover:border-indigo-400 transition-colors"
+                    className="text-xs font-heading font-bold uppercase tracking-wider px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-[#f8fafc] transition-colors"
                   >
-                    {isCopied ? 'Copied!' : 'Copy Mermaid'}
+                    {isCopied ? 'Copied!' : 'Copy Tasks'}
                   </button>
                 </>
               )}
@@ -85,14 +94,14 @@ export default function FlowchartPage() {
 
         {/* Main Content */}
         <main className="flex-1 flex flex-col p-6 lg:p-10">
-          {!flowchart ? (
+          {!tasks ? (
             <div className="flex-1 flex items-center justify-center">
               <div className="text-center bg-[#0a0f25]/50 backdrop-blur-xl border border-white/10 rounded-2xl p-10 shadow-[0_8px_32px_rgba(0,0,0,0.05)]">
                 <h2 className="font-heading font-extrabold text-xl text-[#f8fafc] mb-2">
-                  Belum Ada Flowchart
+                  Belum Ada Task List
                 </h2>
                 <p className="font-body text-white/70 text-sm mb-6">
-                  Generate PRD terlebih dahulu untuk melihat User Flow diagram.
+                  Generate PRD terlebih dahulu untuk melihat daftar tugas.
                 </p>
                 <button
                   onClick={handleBack}
@@ -103,24 +112,14 @@ export default function FlowchartPage() {
               </div>
             </div>
           ) : (
-            <div className="flex-1 bg-[#0a0f25]/50 backdrop-blur-xl border border-white/10 shadow-[0_8px_32px_rgba(0,0,0,0.05)] rounded-2xl overflow-hidden flex flex-col">
+            <div className="flex-1 max-w-4xl mx-auto w-full bg-[#0a0f25]/50 backdrop-blur-xl border border-white/10 shadow-[0_8px_32px_rgba(0,0,0,0.05)] rounded-2xl overflow-hidden flex flex-col">
               <div className="px-6 py-4 border-b border-white/10 bg-[#1e293b]/50 backdrop-blur-md flex items-center gap-2 flex-shrink-0">
-                <h2 className="font-heading text-base font-extrabold text-[#f8fafc]">User Flow Diagram</h2>
+                <h2 className="font-heading text-base font-extrabold text-[#f8fafc]">Development Task List</h2>
               </div>
-              <div className="flex-1 relative min-h-[500px]">
-                {showCode ? (
-                  <div className="absolute inset-0 p-6 overflow-y-auto custom-scrollbar">
-                    <div className="absolute inset-0 p-6 bg-[#060918]">
-                      <pre className="h-full w-full p-6 rounded-xl bg-[#0a0f25]/80 text-[#a7f3d0] font-mono text-sm overflow-auto custom-scrollbar border border-white/10 shadow-inner">
-                        <code>{flowchart}</code>
-                      </pre>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="absolute inset-0">
-                    <UserFlowDiagram mermaidCode={flowchart} />
-                  </div>
-                )}
+              <div className="flex-1 relative overflow-y-auto custom-scrollbar p-8">
+                <article className="prose prose-slate prose-invert max-w-none prose-headings:font-heading prose-headings:font-extrabold prose-p:font-body prose-li:font-body prose-a:text-indigo-400">
+                  <ReactMarkdown>{tasks}</ReactMarkdown>
+                </article>
               </div>
             </div>
           )}

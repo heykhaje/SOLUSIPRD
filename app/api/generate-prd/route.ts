@@ -5,18 +5,14 @@ const SYSTEM_PROMPT = `Anda adalah Product Manager senior. Ubah ide mentah ini m
 1) Latar Belakang
 2) User Roles
 3) Spesifikasi Fitur
-4) User Flow
-- Jelaskan alur utama pengguna dari awal hingga akhir
-- Buat step-by-step flow untuk setiap user role
-- Sertakan edge cases dan error handling yang perlu dipertimbangkan
 
 ATURAN FORMAT OUTPUT:
 - Berikan dokumen PRD dalam format Markdown standar yang rapi.
-- JANGAN sertakan flowchart atau diagram Mermaid di dalam dokumen PRD.
 - Setelah selesai menulis PRD, tambahkan pemisah tepat seperti ini:
----FLOWCHART_SEPARATOR---
-- Setelah pemisah tersebut, tulis HANYA kode Mermaid flowchart (tanpa markdown codeblock, tanpa backtick) yang merepresentasikan User Flow utama dari PRD di atas.
-- Flowchart harus menggunakan syntax Mermaid.js yang valid (graph TD atau flowchart TD).`;
+---TASKS_SEPARATOR---
+- Setelah pemisah tersebut, buatlah DAFTAR TUGAS (Task List) yang sangat detail dalam format Markdown (gunakan checkbox "- [ ]"). 
+- Task List ini harus berisi langkah-langkah teknis dan fungsional yang siap dikerjakan oleh developer atau AI Coder untuk mewujudkan PRD tersebut.
+- Bagikan task berdasarkan fitur atau halaman (misal: "### Autentikasi", "### Database", dll).`;
 
 const MODEL_PRIORITY = [
   "gemini-2.5-flash",
@@ -106,25 +102,21 @@ export async function POST(request: Request) {
       );
     }
 
-    // Parse PRD and Flowchart from the response
-    const separator = "---FLOWCHART_SEPARATOR---";
+    // Parse PRD and Tasks from the response
+    const separator = "---TASKS_SEPARATOR---";
     let prdContent = fullContent;
-    let flowchartContent = "";
+    let taskContent = "";
 
     if (fullContent.includes(separator)) {
       const parts = fullContent.split(separator);
       prdContent = parts[0].trim();
-      flowchartContent = parts[1]
-        .trim()
-        .replace(/^```mermaid\s*/i, "")
-        .replace(/```\s*$/, "")
-        .trim();
+      taskContent = parts[1].trim();
     }
 
     return NextResponse.json({
       success: true,
       prd: prdContent,
-      flowchart: flowchartContent,
+      flowchart: taskContent, // keep the key name as 'flowchart' for frontend compatibility but it contains markdown tasks now
     });
   } catch (error: any) {
     console.error("Error generating PRD:", error);

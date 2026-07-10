@@ -176,6 +176,12 @@ export default function Home() {
 
       setPrdResult(data.prd);
       localStorage.setItem('solusiprd_prd', data.prd);
+      
+      if (data.flowchart) {
+        setFlowchartResult(data.flowchart);
+        localStorage.setItem('solusiprd_flowchart', data.flowchart);
+      }
+
       setChatMessages((prev) => [
         ...prev,
         { role: 'ai', content: 'PRD telah diperbarui sesuai permintaan Anda. ✅ Silakan periksa panel kiri.' },
@@ -226,10 +232,10 @@ export default function Home() {
             <div className="flex items-center gap-2">
               {prdResult && flowchartResult && (
                 <a
-                  href="/flowchart"
+                  href="/tasks"
                   className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white font-heading font-bold text-[10px] uppercase tracking-wider transition-colors shadow-md"
                 >
-                  User Flow
+                  Task List
                 </a>
               )}
               <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#1e293b]/40 backdrop-blur-md border border-white/10 shadow-sm font-heading font-bold text-[10px] uppercase tracking-wider text-[#f8fafc]">
@@ -310,6 +316,25 @@ export default function Home() {
                     <h2 className="font-heading text-base font-extrabold text-[#f8fafc]">PRD Document</h2>
                   </div>
                   <div className="flex items-center gap-4">
+                    <button
+                      onClick={() => {
+                        if (prdResult) {
+                          const blob = new Blob([prdResult], { type: 'text/markdown' });
+                          const url = URL.createObjectURL(blob);
+                          const a = document.createElement('a');
+                          a.href = url;
+                          a.download = `PRD-${new Date().getTime()}.md`;
+                          document.body.appendChild(a);
+                          a.click();
+                          document.body.removeChild(a);
+                          URL.revokeObjectURL(url);
+                        }
+                      }}
+                      className="text-xs font-heading font-bold text-[#f8fafc] hover:text-indigo-400 uppercase tracking-wider flex items-center gap-1.5 transition-colors"
+                    >
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                      Download .md
+                    </button>
                     <button
                       onClick={handleCopyPrd}
                       className="text-xs font-heading font-bold text-[#f8fafc] hover:text-indigo-400 uppercase tracking-wider flex items-center gap-1.5 transition-colors"

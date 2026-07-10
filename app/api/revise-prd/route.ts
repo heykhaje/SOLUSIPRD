@@ -70,16 +70,28 @@ Pengguna meminta revisi berikut: "${userMessage}"
 
 ATURAN:
 - Berikan PRD yang sudah direvisi dalam format Markdown lengkap (bukan hanya bagian yang berubah).
-- Jangan sertakan flowchart atau diagram Mermaid.
-- Pertahankan format dan struktur PRD yang sama.
-- Terapkan revisi yang diminta oleh pengguna dengan tepat.
-- Berikan respon murni Markdown PRD saja, tanpa penjelasan tambahan di luar dokumen.`;
+- Setelah selesai menulis PRD, tambahkan pemisah tepat seperti ini:
+---TASKS_SEPARATOR---
+- Setelah pemisah tersebut, buatlah DAFTAR TUGAS (Task List) yang direvisi (berdasarkan PRD baru) dalam format Markdown (gunakan checkbox "- [ ]").
+- Terapkan revisi yang diminta oleh pengguna dengan tepat.`;
 
-    const revisedPrd = await generateWithRetry(ai, prompt);
+    const fullContent = await generateWithRetry(ai, prompt);
+    
+    // Parse PRD and Tasks
+    const separator = "---TASKS_SEPARATOR---";
+    let prdContent = fullContent;
+    let taskContent = "";
+
+    if (fullContent.includes(separator)) {
+      const parts = fullContent.split(separator);
+      prdContent = parts[0].trim();
+      taskContent = parts[1].trim();
+    }
 
     return NextResponse.json({
       success: true,
-      prd: revisedPrd,
+      prd: prdContent,
+      flowchart: taskContent,
     });
   } catch (error: any) {
     console.error("Error revising PRD:", error);
