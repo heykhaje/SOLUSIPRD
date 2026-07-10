@@ -14,6 +14,13 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    // DEBUGGING INFO (will show in Vercel Logs)
+    console.log('--- MIDTRANS DEBUG ---');
+    console.log('NODE_ENV:', process.env.NODE_ENV);
+    console.log('IS_PRODUCTION_ENV:', process.env.NEXT_PUBLIC_MIDTRANS_IS_PRODUCTION);
+    console.log('SERVER_KEY_PREFIX:', process.env.MIDTRANS_SERVER_KEY ? process.env.MIDTRANS_SERVER_KEY.substring(0, 10) + '...' : 'MISSING');
+    console.log('----------------------');
+
     let amount = 0;
     let planName = '';
 
