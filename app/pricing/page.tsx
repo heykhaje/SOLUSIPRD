@@ -98,14 +98,6 @@ export default function PricingPage() {
       features: ['Akses Generator PRD (7 Hari)', 'Export Terbatas', 'Standar Antrean AI']
     },
     {
-      id: 'pro',
-      name: 'Pro',
-      price: '100.000',
-      period: 'per bulan',
-      description: 'Pilihan standar untuk Product Manager.',
-      features: ['Akses Generator PRD (30 Hari)', 'Export Tak Terbatas', 'Prioritas Antrean AI', 'Akses Fitur Baru']
-    },
-    {
       id: 'max',
       name: 'Max',
       price: '130.000',
@@ -113,6 +105,14 @@ export default function PricingPage() {
       description: 'Pilihan paling populer. Akses penuh tanpa batas.',
       features: ['Akses Semua Fitur Pro', 'Respon AI Ultra Cepat', 'Prioritas Dukungan 24/7', 'Kustomisasi Prompt Khusus'],
       popular: true
+    },
+    {
+      id: 'pro',
+      name: 'Pro',
+      price: '100.000',
+      period: 'per bulan',
+      description: 'Pilihan standar untuk Product Manager.',
+      features: ['Akses Generator PRD (30 Hari)', 'Export Tak Terbatas', 'Prioritas Antrean AI', 'Akses Fitur Baru']
     }
   ];
 
