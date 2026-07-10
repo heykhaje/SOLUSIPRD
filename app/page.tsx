@@ -171,7 +171,7 @@ export default function Home() {
     }
 
     // Pass the structural context along with the prompt to ensure PRD follows the mind map
-    const combinedPrompt = \`MIND MAP TERKINI:\\n\${JSON.stringify(structureResult, null, 2)}\\n\\nIDE AWAL: \${userPrompt}\`;
+    const combinedPrompt = `MIND MAP TERKINI:n${JSON.stringify(structureResult, null, 2)}nnIDE AWAL: ${userPrompt}`;
 
     try {
       const res = await fetch('/api/generate-prd', {
@@ -238,7 +238,7 @@ export default function Home() {
         { role: 'ai', content: 'PRD telah diperbarui sesuai permintaan Anda. ✅ Silakan periksa dokumen.' },
       ]);
     } catch (err: any) {
-      setChatMessages((prev) => [...prev, { role: 'ai', content: \`⚠️ Error: \${err.message}\` }]);
+      setChatMessages((prev) => [...prev, { role: 'ai', content: `⚠️ Error: ${err.message}` }]);
     } finally {
       setIsRevising(false);
     }
@@ -297,27 +297,27 @@ export default function Home() {
               <div className="hidden md:flex items-center gap-4 px-6 py-2 bg-[#1e293b]/50 border border-white/10 rounded-full">
                 <button 
                   onClick={() => setStep(2)} 
-                  className={\`flex items-center gap-2 text-[11px] font-heading font-bold uppercase tracking-widest transition-colors \${step === 2 ? 'text-indigo-400' : 'text-white/40 hover:text-white/70'}\`}
+                  className={`flex items-center gap-2 text-[11px] font-heading font-bold uppercase tracking-widest transition-colors ${step === 2 ? 'text-indigo-400' : 'text-white/40 hover:text-white/70'}`}
                 >
-                  <span className={\`w-5 h-5 rounded-full flex items-center justify-center text-[10px] \${step === 2 ? 'bg-indigo-500/20 text-indigo-400' : 'bg-white/5 text-white/40'}\`}>1</span>
+                  <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] ${step === 2 ? 'bg-indigo-500/20 text-indigo-400' : 'bg-white/5 text-white/40'}`}>1</span>
                   Struktur
                 </button>
                 <div className="w-8 h-[1px] bg-white/10" />
                 <button 
                   onClick={() => prdResult && setStep(3)} 
                   disabled={!prdResult}
-                  className={\`flex items-center gap-2 text-[11px] font-heading font-bold uppercase tracking-widest transition-colors \${step === 3 ? 'text-indigo-400' : 'text-white/40 hover:text-white/70'} disabled:opacity-50 disabled:cursor-not-allowed\`}
+                  className={`flex items-center gap-2 text-[11px] font-heading font-bold uppercase tracking-widest transition-colors ${step === 3 ? 'text-indigo-400' : 'text-white/40 hover:text-white/70'} disabled:opacity-50 disabled:cursor-not-allowed`}
                 >
-                  <span className={\`w-5 h-5 rounded-full flex items-center justify-center text-[10px] \${step === 3 ? 'bg-indigo-500/20 text-indigo-400' : 'bg-white/5 text-white/40'}\`}>2</span>
+                  <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] ${step === 3 ? 'bg-indigo-500/20 text-indigo-400' : 'bg-white/5 text-white/40'}`}>2</span>
                   PRD
                 </button>
                 <div className="w-8 h-[1px] bg-white/10" />
                 <button 
                   onClick={() => flowchartResult && setStep(4)}
                   disabled={!flowchartResult} 
-                  className={\`flex items-center gap-2 text-[11px] font-heading font-bold uppercase tracking-widest transition-colors \${step === 4 ? 'text-indigo-400' : 'text-white/40 hover:text-white/70'} disabled:opacity-50 disabled:cursor-not-allowed\`}
+                  className={`flex items-center gap-2 text-[11px] font-heading font-bold uppercase tracking-widest transition-colors ${step === 4 ? 'text-indigo-400' : 'text-white/40 hover:text-white/70'} disabled:opacity-50 disabled:cursor-not-allowed`}
                 >
-                  <span className={\`w-5 h-5 rounded-full flex items-center justify-center text-[10px] \${step === 4 ? 'bg-indigo-500/20 text-indigo-400' : 'bg-white/5 text-white/40'}\`}>3</span>
+                  <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] ${step === 4 ? 'bg-indigo-500/20 text-indigo-400' : 'bg-white/5 text-white/40'}`}>3</span>
                   Task
                 </button>
               </div>
@@ -436,7 +436,7 @@ export default function Home() {
                   <h2 className="font-heading text-base font-extrabold text-[#f8fafc]">PRD Document</h2>
                   <div className="flex items-center gap-3">
                     <button
-                      onClick={() => downloadMarkdown(prdResult, \`PRD-\${new Date().getTime()}.md\`)}
+                      onClick={() => downloadMarkdown(prdResult, `PRD-${new Date().getTime()}.md`)}
                       className="text-xs font-heading font-bold text-[#f8fafc] hover:text-indigo-400 uppercase tracking-wider flex items-center gap-1.5 transition-colors"
                     >
                       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
@@ -463,15 +463,15 @@ export default function Home() {
                   <div className="px-6 py-4 border-b border-white/10 bg-[#1e293b]/50 backdrop-blur-md flex items-center justify-between flex-shrink-0">
                     <h2 className="font-heading text-base font-extrabold text-[#f8fafc]">Revision Chat</h2>
                     <span className="flex items-center gap-1.5">
-                      <span className={\`w-2 h-2 rounded-full \${isRevising ? 'bg-amber-500 animate-pulse' : 'bg-emerald-500'}\`} />
+                      <span className={`w-2 h-2 rounded-full ${isRevising ? 'bg-amber-500 animate-pulse' : 'bg-emerald-500'}`} />
                       <span className="font-body text-[10px] text-white/70">{isRevising ? 'Revising...' : 'AI Ready'}</span>
                     </span>
                   </div>
 
                   <div className="flex-1 overflow-y-auto p-5 flex flex-col gap-3 custom-scrollbar">
                     {chatMessages.map((msg, i) => (
-                      <div key={i} className={\`flex \${msg.role === 'user' ? 'justify-end' : 'justify-start'}\`}>
-                        <div className={\`max-w-[85%] rounded-2xl px-4 py-3 text-sm font-body leading-relaxed \${msg.role === 'user' ? 'bg-indigo-600 text-white rounded-br-sm shadow-md' : 'bg-[#1e293b]/80 backdrop-blur-md border border-white/10 text-[#f8fafc] rounded-bl-sm shadow-sm'}\`}>
+                      <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                        <div className={`max-w-[85%] rounded-2xl px-4 py-3 text-sm font-body leading-relaxed ${msg.role === 'user' ? 'bg-indigo-600 text-white rounded-br-sm shadow-md' : 'bg-[#1e293b]/80 backdrop-blur-md border border-white/10 text-[#f8fafc] rounded-bl-sm shadow-sm'}`}>
                           {msg.content}
                         </div>
                       </div>
@@ -516,7 +516,7 @@ export default function Home() {
                     disabled={!flowchartResult}
                     className="w-full lg:w-auto px-8 py-4 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-heading font-bold text-sm shadow-[0_0_20px_rgba(79,70,229,0.3)] transition-colors flex items-center justify-center gap-2"
                   >
-                    Lanjutkan ke Task List >
+                    Lanjutkan ke Task List &gt;
                   </button>
                 </div>
               </div>
@@ -530,7 +530,7 @@ export default function Home() {
                   <h2 className="font-heading text-base font-extrabold text-[#f8fafc]">Development Task List</h2>
                   <div className="flex items-center gap-3">
                     <button
-                      onClick={() => downloadMarkdown(flowchartResult, \`Tasks-\${new Date().getTime()}.md\`)}
+                      onClick={() => downloadMarkdown(flowchartResult, `Tasks-${new Date().getTime()}.md`)}
                       className="text-xs font-heading font-bold text-[#f8fafc] hover:text-indigo-400 uppercase tracking-wider flex items-center gap-1.5 transition-colors"
                     >
                       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>

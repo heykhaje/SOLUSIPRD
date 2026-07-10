@@ -2,7 +2,7 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 import { NextResponse } from "next/server";
 import { createClient } from "@/utils/supabase/server";
 
-const SYSTEM_PROMPT = \`Anda adalah Product Manager senior. Ubah ide mentah ini menjadi dokumen PRD lengkap berformat Markdown yang berisi: 
+const SYSTEM_PROMPT = `Anda adalah Product Manager senior. Ubah ide mentah ini menjadi dokumen PRD lengkap berformat Markdown yang berisi:
 1) Latar Belakang
 2) User Roles
 3) Spesifikasi Fitur
@@ -13,7 +13,7 @@ ATURAN FORMAT OUTPUT:
 ---TASKS_SEPARATOR---
 - Setelah pemisah tersebut, buatlah DAFTAR TUGAS (Task List) yang sangat detail dalam format Markdown (gunakan checkbox "- [ ]"). 
 - Task List ini harus berisi langkah-langkah teknis dan fungsional yang siap dikerjakan oleh developer atau AI Coder untuk mewujudkan PRD tersebut.
-- Bagikan task berdasarkan fitur atau halaman (misal: "### Autentikasi", "### Database", dll).\`;
+- Bagikan task berdasarkan fitur atau halaman (misal: "### Autentikasi", "### Database", dll).`;
 
 const MODEL_PRIORITY = [
   "gemini-2.5-flash",
@@ -36,7 +36,7 @@ async function generateWithRetry(
   for (const modelName of MODEL_PRIORITY) {
     for (let attempt = 0; attempt <= maxRetries; attempt++) {
       try {
-        console.log(\`Trying model: \${modelName} (attempt \${attempt + 1})\`);
+        console.log(`Trying model: ${modelName} (attempt ${attempt + 1})`);
         const model = ai.getGenerativeModel({ model: modelName });
         const response = await model.generateContent(prompt);
         return response.response.text();
@@ -46,12 +46,12 @@ async function generateWithRetry(
 
         if ((status === 429 || status === 503) && attempt < maxRetries) {
           const waitTime = (attempt + 1) * 5000;
-          console.warn(\`API error \${status} on \${modelName}, waiting \${waitTime / 1000}s...\`);
+          console.warn(`API error ${status} on ${modelName}, waiting ${waitTime / 1000}s...`);
           await delay(waitTime);
           continue;
         }
 
-        console.warn(\`Model \${modelName} failed: \${e.message}\`);
+        console.warn(`Model ${modelName} failed: ${e.message}`);
         break;
       }
     }
@@ -132,7 +132,7 @@ export async function POST(request: Request) {
       tierInstruction = "INI ADALAH PELANGGAN TINGKAT PRO. Berikan detail yang sangat baik dan terstruktur rapi dengan edge cases yang jelas.";
     }
 
-    const fullPrompt = \`\${SYSTEM_PROMPT}\\n\${tierInstruction}\\n\\nIde Aplikasi:\\n\${userPrompt}\`;
+    const fullPrompt = `${SYSTEM_PROMPT}\n${tierInstruction}\n\nIde Aplikasi:\n${userPrompt}`;
     const fullContent = await generateWithRetry(ai, fullPrompt);
 
     if (!fullContent) {

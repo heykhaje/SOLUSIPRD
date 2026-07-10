@@ -1,7 +1,7 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { NextResponse } from "next/server";
 
-const SYSTEM_PROMPT = \`Anda adalah Arsitek Produk Visual dan Spesialis Dokumentasi senior. Tugas Anda adalah memecah ide mentah pengguna menjadi sebuah Struktur Hierarki WBS (Work Breakdown Structure) atau Feature Map yang sangat mendetail.
+const SYSTEM_PROMPT = `Anda adalah Arsitek Produk Visual dan Spesialis Dokumentasi senior. Tugas Anda adalah memecah ide mentah pengguna menjadi sebuah Struktur Hierarki WBS (Work Breakdown Structure) atau Feature Map yang sangat mendetail.
 
 ATURAN FORMAT OUTPUT:
 - Anda HARUS merespon HANYA dengan sebuah blok JSON yang valid, tanpa teks penjelasan apapun di sekitarnya.
@@ -26,7 +26,7 @@ ATURAN FORMAT OUTPUT:
 - Untuk setiap feature, berikan 3 sampai 5 "subfeatures".
 - Untuk field "icon", berikan nama ikon dari pustaka Lucide React dalam format kebab-case (contoh: "shopping-cart", "credit-card", "users", "utensils", "layout-dashboard", "settings", "check-circle", "list", "bell", "shield", "box", "home", "search"). Pilih yang paling relevan.
 - Urutkan fitur berdasarkan "phase" (FASE 1, FASE 2, dst).
-- JANGAN sertakan markdown backticks (seperti \\\`\\\`\\\`json). Mulai langsung dengan tanda kurung kurawal {.\`;
+- JANGAN sertakan markdown backticks (seperti \`\`\`json). Mulai langsung dengan tanda kurung kurawal {.`;
 
 const MODEL_PRIORITY = [
   "gemini-2.5-flash",

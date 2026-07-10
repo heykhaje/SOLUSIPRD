@@ -275,7 +275,7 @@ function parseStructureToFlow(data?: StructureData | null): { nodes: Node[]; edg
   });
 
   data.features.forEach((feature, index) => {
-    const featureId = \`feature-\${index}\`;
+    const featureId = `feature-${index}`;
     const yPos = index * Y_SPACING;
 
     // Feature Node
@@ -292,7 +292,7 @@ function parseStructureToFlow(data?: StructureData | null): { nodes: Node[]; edg
     });
 
     edges.push({
-      id: \`e-root-\${featureId}\`,
+      id: `e-root-${featureId}`,
       source: 'root',
       target: featureId,
       type: 'bezier',
@@ -300,7 +300,7 @@ function parseStructureToFlow(data?: StructureData | null): { nodes: Node[]; edg
     });
 
     // Subfeature Node
-    const subfeatureId = \`sub-\${index}\`;
+    const subfeatureId = `sub-${index}`;
     nodes.push({
       id: subfeatureId,
       type: 'subfeatureNode',
@@ -309,7 +309,7 @@ function parseStructureToFlow(data?: StructureData | null): { nodes: Node[]; edg
     });
 
     edges.push({
-      id: \`e-\${featureId}-\${subfeatureId}\`,
+      id: `e-${featureId}-${subfeatureId}`,
       source: featureId,
       target: subfeatureId,
       type: 'bezier',
