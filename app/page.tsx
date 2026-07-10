@@ -3,6 +3,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import ReactMarkdown from 'react-markdown';
 import DitherBackground from '@/components/backgrounds/DitherBackground';
+import StructureDiagram from '@/components/StructureDiagram';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/utils/supabase/client';
 
@@ -12,21 +13,26 @@ interface ChatMessage {
 }
 
 export default function Home() {
+  const [step, setStep] = useState<1 | 2 | 3 | 4>(1); // 1: Ide, 2: Struktur, 3: PRD, 4: Task
+  
   const [userPrompt, setUserPrompt] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [loadingMessageIndex, setLoadingMessageIndex] = useState(0);
+  
+  const [structureResult, setStructureResult] = useState<any>(null);
   const [prdResult, setPrdResult] = useState<string | null>(null);
-  const [flowchartResult, setFlowchartResult] = useState<string | null>(null);
+  const [flowchartResult, setFlowchartResult] = useState<string | null>(null); // Now stores Tasks
   const [error, setError] = useState<string | null>(null);
   const [isCopiedPrd, setIsCopiedPrd] = useState(false);
+  const [isCopiedTasks, setIsCopiedTasks] = useState(false);
+  
   const router = useRouter();
 
   const loadingMessages = [
-    "Menghubungkan...",
+    "Menghubungkan ke server AI...",
     "Menganalisa ide brilian Anda...",
-    "Menyusun struktur dokumen PRD...",
-    "Merancang User Flow...",
-    "Melakukan sentuhan akhir...",
+    "Menyusun struktur...",
+    "Merancang sistem...",
     "Sedikit lagi selesai..."
   ];
 
@@ -49,14 +55,17 @@ export default function Home() {
   const chatEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    // Load saved data from localStorage on mount
     const savedPrd = localStorage.getItem('solusiprd_prd');
     const savedFlowchart = localStorage.getItem('solusiprd_flowchart');
     const savedPrompt = localStorage.getItem('solusiprd_prompt');
-    if (savedPrd) {
+    const savedStructure = localStorage.getItem('solusiprd_structure');
+    
+    if (savedPrd && savedStructure) {
+      setStructureResult(JSON.parse(savedStructure));
       setPrdResult(savedPrd);
       setFlowchartResult(savedFlowchart);
       if (savedPrompt) setUserPrompt(savedPrompt);
+      setStep(3); // Default to PRD if returning
       setChatMessages([
         { role: 'ai', content: 'PRD berhasil dimuat kembali! 🎉 Ada bagian yang ingin Anda revisi?' },
       ]);
@@ -75,18 +84,67 @@ export default function Home() {
     }
   };
 
-  const handleGenerate = async (e: React.FormEvent) => {
+  const handleCopyTasks = async () => {
+    if (flowchartResult) {
+      await navigator.clipboard.writeText(flowchartResult);
+      setIsCopiedTasks(true);
+      setTimeout(() => setIsCopiedTasks(false), 2000);
+    }
+  };
+
+  const downloadMarkdown = (content: string, filename: string) => {
+    const blob = new Blob([content], { type: 'text/markdown' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
+  const handleGenerateStructure = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!userPrompt.trim()) return;
 
     setIsLoading(true);
     setError(null);
 
-    // Paywall check
     const supabase = createClient();
     const { data: userData } = await supabase.auth.getUser();
-    
-    let isSubscribed = false;
+    if (!userData.user) {
+      router.push('/login');
+      return;
+    }
+
+    try {
+      const res = await fetch('/api/generate-structure', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ prompt: userPrompt }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to generate structure');
+
+      setStructureResult(data.structure);
+      localStorage.setItem('solusiprd_structure', JSON.stringify(data.structure));
+      localStorage.setItem('solusiprd_prompt', userPrompt);
+      setStep(2);
+    } catch (err: any) {
+      setError(err.message || 'Something went wrong');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleGeneratePrd = async () => {
+    setIsLoading(true);
+    setError(null);
+
+    const supabase = createClient();
+    const { data: userData } = await supabase.auth.getUser();
     let subscriptionTier = 'free';
 
     if (userData.user) {
@@ -96,18 +154,14 @@ export default function Home() {
         .eq('id', userData.user.id)
         .single();
       
-      const adminEmail = 'adjiprasetyo970@gmail.com'; // Admin always bypasses paywall
+      const adminEmail = 'adjiprasetyo970@gmail.com';
       const allowedTiers = ['basic', 'pro', 'max'];
       
       if (userData.user.email === adminEmail) {
-        isSubscribed = true;
-        subscriptionTier = 'max'; // Admin gets max tier by default
+        subscriptionTier = 'max';
       } else if (profile?.subscription_status && allowedTiers.includes(profile.subscription_status)) {
-        isSubscribed = true;
         subscriptionTier = profile.subscription_status;
-      }
-      
-      if (!isSubscribed) {
+      } else {
         router.push('/pricing');
         return;
       }
@@ -116,36 +170,34 @@ export default function Home() {
       return;
     }
 
+    // Pass the structural context along with the prompt to ensure PRD follows the mind map
+    const combinedPrompt = \`MIND MAP TERKINI:\\n\${JSON.stringify(structureResult, null, 2)}\\n\\nIDE AWAL: \${userPrompt}\`;
+
     try {
       const res = await fetch('/api/generate-prd', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ prompt: userPrompt, tier: subscriptionTier }),
+        body: JSON.stringify({ prompt: combinedPrompt, tier: subscriptionTier }),
       });
 
       const data = await res.json();
-
-      if (!res.ok) {
-        throw new Error(data.error || 'Failed to generate PRD');
-      }
+      if (!res.ok) throw new Error(data.error || 'Failed to generate PRD');
 
       setPrdResult(data.prd);
       setFlowchartResult(data.flowchart || null);
 
-      // Store all data in localStorage for persistence
       localStorage.setItem('solusiprd_prd', data.prd);
-      localStorage.setItem('solusiprd_prompt', userPrompt);
       if (data.flowchart) {
         localStorage.setItem('solusiprd_flowchart', data.flowchart);
       }
 
-      // Initialize chat with welcome message
       setChatMessages([
         {
           role: 'ai',
           content: 'PRD berhasil di-generate! 🎉 Ada bagian yang ingin Anda revisi? Ketik permintaan Anda di bawah.',
         },
       ]);
+      setStep(3);
     } catch (err: any) {
       setError(err.message || 'Something went wrong');
     } finally {
@@ -169,10 +221,7 @@ export default function Home() {
       });
 
       const data = await res.json();
-
-      if (!res.ok) {
-        throw new Error(data.error || 'Gagal merevisi PRD');
-      }
+      if (!res.ok) throw new Error(data.error || 'Gagal merevisi PRD');
 
       setPrdResult(data.prd);
       localStorage.setItem('solusiprd_prd', data.prd);
@@ -184,13 +233,10 @@ export default function Home() {
 
       setChatMessages((prev) => [
         ...prev,
-        { role: 'ai', content: 'PRD telah diperbarui sesuai permintaan Anda. ✅ Silakan periksa panel kiri.' },
+        { role: 'ai', content: 'PRD telah diperbarui sesuai permintaan Anda. ✅ Silakan periksa dokumen.' },
       ]);
     } catch (err: any) {
-      setChatMessages((prev) => [
-        ...prev,
-        { role: 'ai', content: `⚠️ Error: ${err.message}` },
-      ]);
+      setChatMessages((prev) => [...prev, { role: 'ai', content: \`⚠️ Error: \${err.message}\` }]);
     } finally {
       setIsRevising(false);
     }
@@ -202,10 +248,24 @@ export default function Home() {
       handleRevise();
     }
   };
+
   const handleSignOut = async () => {
     const supabase = createClient();
     await supabase.auth.signOut();
     window.location.href = '/login';
+  };
+
+  const resetAll = () => {
+    setPrdResult(null);
+    setFlowchartResult(null);
+    setStructureResult(null);
+    setUserPrompt('');
+    setChatMessages([]);
+    setStep(1);
+    localStorage.removeItem('solusiprd_prd');
+    localStorage.removeItem('solusiprd_flowchart');
+    localStorage.removeItem('solusiprd_prompt');
+    localStorage.removeItem('solusiprd_structure');
   };
 
   return (
@@ -229,15 +289,39 @@ export default function Home() {
                 </span>
               </div>
             </div>
-            <div className="flex items-center gap-2">
-              {prdResult && flowchartResult && (
-                <a
-                  href="/tasks"
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white font-heading font-bold text-[10px] uppercase tracking-wider transition-colors shadow-md"
+            
+            {/* Minimalist Stepper UI for Step > 1 */}
+            {step > 1 && (
+              <div className="hidden md:flex items-center gap-4 px-6 py-2 bg-[#1e293b]/50 border border-white/10 rounded-full">
+                <button 
+                  onClick={() => setStep(2)} 
+                  className={\`flex items-center gap-2 text-[11px] font-heading font-bold uppercase tracking-widest transition-colors \${step === 2 ? 'text-indigo-400' : 'text-white/40 hover:text-white/70'}\`}
                 >
-                  Task List
-                </a>
-              )}
+                  <span className={\`w-5 h-5 rounded-full flex items-center justify-center text-[10px] \${step === 2 ? 'bg-indigo-500/20 text-indigo-400' : 'bg-white/5 text-white/40'}\`}>1</span>
+                  Struktur
+                </button>
+                <div className="w-8 h-[1px] bg-white/10" />
+                <button 
+                  onClick={() => prdResult && setStep(3)} 
+                  disabled={!prdResult}
+                  className={\`flex items-center gap-2 text-[11px] font-heading font-bold uppercase tracking-widest transition-colors \${step === 3 ? 'text-indigo-400' : 'text-white/40 hover:text-white/70'} disabled:opacity-50 disabled:cursor-not-allowed\`}
+                >
+                  <span className={\`w-5 h-5 rounded-full flex items-center justify-center text-[10px] \${step === 3 ? 'bg-indigo-500/20 text-indigo-400' : 'bg-white/5 text-white/40'}\`}>2</span>
+                  PRD
+                </button>
+                <div className="w-8 h-[1px] bg-white/10" />
+                <button 
+                  onClick={() => flowchartResult && setStep(4)}
+                  disabled={!flowchartResult} 
+                  className={\`flex items-center gap-2 text-[11px] font-heading font-bold uppercase tracking-widest transition-colors \${step === 4 ? 'text-indigo-400' : 'text-white/40 hover:text-white/70'} disabled:opacity-50 disabled:cursor-not-allowed\`}
+                >
+                  <span className={\`w-5 h-5 rounded-full flex items-center justify-center text-[10px] \${step === 4 ? 'bg-indigo-500/20 text-indigo-400' : 'bg-white/5 text-white/40'}\`}>3</span>
+                  Task
+                </button>
+              </div>
+            )}
+
+            <div className="flex items-center gap-2">
               <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#1e293b]/40 backdrop-blur-md border border-white/10 shadow-sm font-heading font-bold text-[10px] uppercase tracking-wider text-[#f8fafc]">
                 AI-Powered
               </span>
@@ -252,10 +336,10 @@ export default function Home() {
         </header>
 
         {/* Main Content */}
-        <main className="flex-1 flex flex-col items-center justify-center p-6 lg:p-10 min-h-[calc(100vh-80px)]">
-          {!prdResult ? (
+        <main className="flex-1 flex flex-col p-6 lg:p-10 min-h-[calc(100vh-80px)]">
+          {step === 1 && (
             /* Ideation Form State */
-            <div className="w-full max-w-2xl mx-auto flex flex-col items-center justify-center animate-in fade-in duration-300">
+            <div className="flex-1 w-full max-w-2xl mx-auto flex flex-col justify-center animate-in fade-in duration-300">
               <div className="text-center mb-8">
                 <h1 className="font-heading text-4xl lg:text-5xl font-extrabold text-[#f8fafc] leading-tight tracking-tight mb-3">
                   What do you want to build?
@@ -266,7 +350,7 @@ export default function Home() {
               </div>
 
               <div className="w-full bg-[#0a0f25]/50 backdrop-blur-xl border border-white/10 shadow-[0_8px_32px_rgba(0,0,0,0.05)] rounded-2xl p-6 lg:p-8">
-                <form onSubmit={handleGenerate} className="flex flex-col gap-6">
+                <form onSubmit={handleGenerateStructure} className="flex flex-col gap-6">
                   <div className="flex flex-col gap-2">
                     <label htmlFor="prompt" className="font-heading font-bold text-sm text-[#f8fafc] uppercase tracking-wide">
                       Your Idea
@@ -300,36 +384,57 @@ export default function Home() {
                         <span className="animate-pulse">{loadingMessages[loadingMessageIndex]}</span>
                       </>
                     ) : (
-                      'Generate PRD'
+                      'Generate Structure'
                     )}
                   </button>
                 </form>
               </div>
             </div>
-          ) : (
-            /* Split Screen Result State */
-            <div className="w-full max-w-[1800px] h-full flex flex-col lg:flex-row gap-6 animate-in fade-in duration-300 flex-1 min-h-0">
-              {/* Left Panel: PRD Document */}
-              <div className="lg:w-3/5 w-full h-full min-h-[500px] bg-[#0a0f25]/50 backdrop-blur-xl border border-white/10 shadow-[0_8px_32px_rgba(0,0,0,0.05)] rounded-2xl flex flex-col overflow-hidden">
-                <div className="px-6 py-4 border-b border-white/10 bg-[#1e293b]/50 backdrop-blur-md flex items-center justify-between flex-shrink-0">
-                  <div className="flex items-center gap-2">
-                    <h2 className="font-heading text-base font-extrabold text-[#f8fafc]">PRD Document</h2>
+          )}
+
+          {step === 2 && structureResult && (
+            <div className="w-full h-full flex flex-col flex-1 animate-in fade-in duration-300">
+              <div className="flex-1 bg-[#0a0f25]/50 backdrop-blur-xl border border-white/10 shadow-[0_8px_32px_rgba(0,0,0,0.05)] rounded-2xl overflow-hidden flex flex-col relative min-h-[600px]">
+                <div className="absolute inset-0">
+                  <StructureDiagram data={structureResult} />
+                </div>
+                
+                {/* Overlay Lanjutkan Button */}
+                <div className="absolute top-6 right-6 z-10 flex gap-3">
+                   <button
+                    onClick={resetAll}
+                    className="px-5 py-2.5 bg-rose-900/40 hover:bg-rose-900/60 border border-rose-500/20 text-rose-300 rounded-xl font-heading font-bold text-sm shadow-lg transition-colors"
+                  >
+                    Ulangi
+                  </button>
+                  <button
+                    onClick={handleGeneratePrd}
+                    disabled={isLoading}
+                    className="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-heading font-bold text-sm shadow-[0_0_20px_rgba(79,70,229,0.4)] transition-colors flex items-center gap-2"
+                  >
+                    {isLoading ? 'Sedang Memproses...' : 'Lanjutkan ke PRD >'}
+                  </button>
+                </div>
+
+                {isLoading && (
+                  <div className="absolute inset-0 bg-[#060918]/80 backdrop-blur-sm z-20 flex flex-col items-center justify-center">
+                    <span className="w-10 h-10 border-4 border-indigo-500/30 border-t-indigo-500 rounded-full animate-spin mb-4" />
+                    <span className="font-heading font-bold text-white tracking-widest uppercase">{loadingMessages[loadingMessageIndex]}</span>
                   </div>
-                  <div className="flex items-center gap-4">
+                )}
+              </div>
+            </div>
+          )}
+
+          {step === 3 && prdResult && (
+            <div className="w-full h-full flex flex-col lg:flex-row gap-6 animate-in fade-in duration-300 flex-1 min-h-[600px]">
+              {/* PRD Document */}
+              <div className="lg:w-3/5 w-full h-full bg-[#0a0f25]/50 backdrop-blur-xl border border-white/10 shadow-[0_8px_32px_rgba(0,0,0,0.05)] rounded-2xl flex flex-col overflow-hidden">
+                <div className="px-6 py-4 border-b border-white/10 bg-[#1e293b]/50 backdrop-blur-md flex items-center justify-between flex-shrink-0">
+                  <h2 className="font-heading text-base font-extrabold text-[#f8fafc]">PRD Document</h2>
+                  <div className="flex items-center gap-3">
                     <button
-                      onClick={() => {
-                        if (prdResult) {
-                          const blob = new Blob([prdResult], { type: 'text/markdown' });
-                          const url = URL.createObjectURL(blob);
-                          const a = document.createElement('a');
-                          a.href = url;
-                          a.download = `PRD-${new Date().getTime()}.md`;
-                          document.body.appendChild(a);
-                          a.click();
-                          document.body.removeChild(a);
-                          URL.revokeObjectURL(url);
-                        }
-                      }}
+                      onClick={() => downloadMarkdown(prdResult, \`PRD-\${new Date().getTime()}.md\`)}
                       className="text-xs font-heading font-bold text-[#f8fafc] hover:text-indigo-400 uppercase tracking-wider flex items-center gap-1.5 transition-colors"
                     >
                       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
@@ -341,20 +446,6 @@ export default function Home() {
                     >
                       {isCopiedPrd ? 'Copied!' : 'Copy'}
                     </button>
-                    <button
-                      onClick={() => {
-                        setPrdResult(null);
-                        setFlowchartResult(null);
-                        setUserPrompt('');
-                        setChatMessages([]);
-                        localStorage.removeItem('solusiprd_prd');
-                        localStorage.removeItem('solusiprd_flowchart');
-                        localStorage.removeItem('solusiprd_prompt');
-                      }}
-                      className="text-xs font-heading font-bold text-indigo-600 hover:text-indigo-800 uppercase tracking-wider"
-                    >
-                      Start Over
-                    </button>
                   </div>
                 </div>
                 <div className="flex-1 overflow-y-auto p-8 custom-scrollbar">
@@ -364,97 +455,106 @@ export default function Home() {
                 </div>
               </div>
 
-              {/* Right Panel: Revision Chat */}
-              <div className="lg:w-2/5 w-full h-full min-h-[500px] bg-[#0a0f25]/50 backdrop-blur-xl border border-white/10 shadow-[0_8px_32px_rgba(0,0,0,0.05)] rounded-2xl flex flex-col overflow-hidden">
-                <div className="px-6 py-4 border-b border-white/10 bg-[#1e293b]/50 backdrop-blur-md flex items-center justify-between flex-shrink-0">
-                  <div className="flex items-center gap-2">
+              {/* Chat & Nav */}
+              <div className="lg:w-2/5 w-full h-full flex flex-col gap-6">
+                <div className="flex-1 bg-[#0a0f25]/50 backdrop-blur-xl border border-white/10 shadow-[0_8px_32px_rgba(0,0,0,0.05)] rounded-2xl flex flex-col overflow-hidden min-h-[400px]">
+                  <div className="px-6 py-4 border-b border-white/10 bg-[#1e293b]/50 backdrop-blur-md flex items-center justify-between flex-shrink-0">
                     <h2 className="font-heading text-base font-extrabold text-[#f8fafc]">Revision Chat</h2>
-                  </div>
-                  <span className="flex items-center gap-1.5">
-                    <span className={`w-2 h-2 rounded-full ${isRevising ? 'bg-amber-500 animate-pulse' : 'bg-emerald-500'}`} />
-                    <span className="font-body text-[10px] text-white/70">
-                      {isRevising ? 'Revising...' : 'AI Ready'}
+                    <span className="flex items-center gap-1.5">
+                      <span className={\`w-2 h-2 rounded-full \${isRevising ? 'bg-amber-500 animate-pulse' : 'bg-emerald-500'}\`} />
+                      <span className="font-body text-[10px] text-white/70">{isRevising ? 'Revising...' : 'AI Ready'}</span>
                     </span>
-                  </span>
-                </div>
+                  </div>
 
-                {/* Chat Messages */}
-                <div className="flex-1 overflow-y-auto p-5 flex flex-col gap-3 custom-scrollbar">
-                  {chatMessages.map((msg, i) => (
-                    <div
-                      key={i}
-                      className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
-                    >
-                      <div
-                        className={`max-w-[85%] rounded-2xl px-4 py-3 text-sm font-body leading-relaxed ${
-                          msg.role === 'user'
-                            ? 'bg-indigo-600 text-white rounded-br-sm shadow-md'
-                            : 'bg-[#1e293b]/80 backdrop-blur-md border border-white/10 text-[#f8fafc] rounded-bl-sm shadow-sm'
-                        }`}
-                      >
-                        {msg.content}
+                  <div className="flex-1 overflow-y-auto p-5 flex flex-col gap-3 custom-scrollbar">
+                    {chatMessages.map((msg, i) => (
+                      <div key={i} className={\`flex \${msg.role === 'user' ? 'justify-end' : 'justify-start'}\`}>
+                        <div className={\`max-w-[85%] rounded-2xl px-4 py-3 text-sm font-body leading-relaxed \${msg.role === 'user' ? 'bg-indigo-600 text-white rounded-br-sm shadow-md' : 'bg-[#1e293b]/80 backdrop-blur-md border border-white/10 text-[#f8fafc] rounded-bl-sm shadow-sm'}\`}>
+                          {msg.content}
+                        </div>
                       </div>
-                    </div>
-                  ))}
-
-                  {isRevising && (
-                    <div className="flex justify-start">
-                      <div className="bg-[#1e293b]/80 backdrop-blur-md border border-white/10 rounded-2xl rounded-bl-sm px-4 py-3 shadow-sm">
-                        <div className="flex items-center gap-1.5">
+                    ))}
+                    {isRevising && (
+                      <div className="flex justify-start">
+                        <div className="bg-[#1e293b]/80 backdrop-blur-md border border-white/10 rounded-2xl rounded-bl-sm px-4 py-3 shadow-sm flex gap-1.5">
                           <span className="w-2 h-2 bg-indigo-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
                           <span className="w-2 h-2 bg-indigo-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
                           <span className="w-2 h-2 bg-indigo-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
                         </div>
                       </div>
+                    )}
+                    <div ref={chatEndRef} />
+                  </div>
+
+                  <div className="p-4 border-t border-white/10 bg-[#1e293b]/50 backdrop-blur-md">
+                    <div className="flex gap-2">
+                      <textarea
+                        value={chatInput}
+                        onChange={(e) => setChatInput(e.target.value)}
+                        onKeyDown={handleChatKeyDown}
+                        placeholder="Ketik permintaan revisi..."
+                        rows={1}
+                        className="flex-1 bg-[#0a0f25]/60 backdrop-blur-md border border-white/10 rounded-xl px-4 py-3 font-body text-sm text-[#f8fafc] placeholder:text-white/40 focus:outline-none focus:border-indigo-400 resize-none shadow-inner"
+                        disabled={isRevising}
+                      />
+                      <button
+                        onClick={handleRevise}
+                        disabled={isRevising || !chatInput.trim()}
+                        className="px-4 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl shadow-md transition-colors flex items-center justify-center disabled:opacity-50"
+                      >
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M22 2L11 13" /><path d="M22 2L15 22L11 13L2 9L22 2Z" /></svg>
+                      </button>
                     </div>
-                  )}
-
-                  <div ref={chatEndRef} />
+                  </div>
                 </div>
 
-                {/* Quick Action Chips */}
-                <div className="px-5 pb-2 flex flex-wrap gap-2">
-                  {['Tambah fitur baru', 'Perbaiki user flow', 'Tambah section timeline'].map((chip) => (
+                <div className="flex justify-end">
+                   <button
+                    onClick={() => setStep(4)}
+                    disabled={!flowchartResult}
+                    className="w-full lg:w-auto px-8 py-4 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-heading font-bold text-sm shadow-[0_0_20px_rgba(79,70,229,0.3)] transition-colors flex items-center justify-center gap-2"
+                  >
+                    Lanjutkan ke Task List >
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {step === 4 && flowchartResult && (
+            <div className="w-full max-w-5xl mx-auto h-full flex flex-col animate-in fade-in duration-300 flex-1 min-h-[600px]">
+              <div className="flex-1 bg-[#0a0f25]/50 backdrop-blur-xl border border-white/10 shadow-[0_8px_32px_rgba(0,0,0,0.05)] rounded-2xl flex flex-col overflow-hidden">
+                <div className="px-6 py-4 border-b border-white/10 bg-[#1e293b]/50 backdrop-blur-md flex items-center justify-between flex-shrink-0">
+                  <h2 className="font-heading text-base font-extrabold text-[#f8fafc]">Development Task List</h2>
+                  <div className="flex items-center gap-3">
                     <button
-                      key={chip}
-                      onClick={() => {
-                        setChatInput(chip);
-                      }}
-                      disabled={isRevising}
-                      className="text-[11px] font-heading font-bold text-indigo-300 bg-indigo-900/40 hover:bg-indigo-900/60 border border-indigo-400/30 rounded-lg px-3 py-1.5 transition-colors disabled:opacity-50"
+                      onClick={() => downloadMarkdown(flowchartResult, \`Tasks-\${new Date().getTime()}.md\`)}
+                      className="text-xs font-heading font-bold text-[#f8fafc] hover:text-indigo-400 uppercase tracking-wider flex items-center gap-1.5 transition-colors"
                     >
-                      {chip}
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                      Download .md
                     </button>
-                  ))}
-                </div>
-
-                {/* Chat Input */}
-                <div className="p-4 border-t border-white/10 bg-[#1e293b]/50 backdrop-blur-md flex-shrink-0">
-                  <div className="flex gap-2">
-                    <textarea
-                      value={chatInput}
-                      onChange={(e) => setChatInput(e.target.value)}
-                      onKeyDown={handleChatKeyDown}
-                      placeholder="Ketik permintaan revisi... (Enter untuk kirim)"
-                      rows={1}
-                      className="flex-1 bg-[#0a0f25]/60 backdrop-blur-md border border-white/10 rounded-xl px-4 py-3 font-body text-sm text-[#f8fafc] placeholder:text-white/40 focus:outline-none focus:border-indigo-400 resize-none shadow-inner"
-                      disabled={isRevising}
-                    />
                     <button
-                      onClick={handleRevise}
-                      disabled={isRevising || !chatInput.trim()}
-                      className="px-4 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl shadow-md transition-colors flex items-center justify-center disabled:opacity-50"
+                      onClick={handleCopyTasks}
+                      className="text-xs font-heading font-bold text-[#f8fafc] hover:text-indigo-400 uppercase tracking-wider flex items-center gap-1.5 transition-colors"
                     >
-                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M22 2L11 13" />
-                        <path d="M22 2L15 22L11 13L2 9L22 2Z" />
-                      </svg>
+                      {isCopiedTasks ? 'Copied!' : 'Copy'}
                     </button>
                   </div>
-                  <p className="text-[10px] font-body text-center text-white/50 mt-2">
-                    Tekan Enter untuk mengirim · Shift+Enter untuk baris baru
-                  </p>
                 </div>
+                <div className="flex-1 overflow-y-auto p-8 custom-scrollbar">
+                  <article className="prose prose-slate prose-invert max-w-none prose-headings:font-heading prose-headings:font-extrabold prose-p:font-body prose-li:font-body prose-a:text-indigo-400">
+                    <ReactMarkdown>{flowchartResult}</ReactMarkdown>
+                  </article>
+                </div>
+              </div>
+              <div className="mt-6 flex justify-end">
+                  <button
+                    onClick={resetAll}
+                    className="px-6 py-3 bg-emerald-600/20 hover:bg-emerald-600/40 border border-emerald-500/30 text-emerald-400 rounded-xl font-heading font-bold text-sm transition-colors"
+                  >
+                    Selesai & Buat Proyek Baru
+                  </button>
               </div>
             </div>
           )}
