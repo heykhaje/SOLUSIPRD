@@ -16,10 +16,8 @@ ATURAN FORMAT OUTPUT:
 - Bagikan task berdasarkan fitur atau halaman (misal: "### Autentikasi", "### Database", dll).`;
 
 const MODEL_PRIORITY = [
-  "gemini-2.5-flash",
-  "gemini-2.0-flash",
-  "gemini-2.0-flash-lite",
-  "gemini-flash-latest",
+  "gemini-1.5-flash",
+  "gemini-1.5-pro",
 ];
 
 async function delay(ms: number) {
