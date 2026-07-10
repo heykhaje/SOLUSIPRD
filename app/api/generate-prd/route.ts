@@ -1,4 +1,4 @@
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import OpenAI from "openai";
 import { NextResponse } from "next/server";
 import { createClient } from "@/utils/supabase/server";
 
@@ -15,43 +15,42 @@ ATURAN FORMAT OUTPUT:
 - Task List ini harus berisi langkah-langkah teknis dan fungsional yang siap dikerjakan oleh developer atau AI Coder untuk mewujudkan PRD tersebut.
 - Bagikan task berdasarkan fitur atau halaman (misal: "### Autentikasi", "### Database", dll).`;
 
-const MODEL_PRIORITY = [
-  "gemini-1.5-flash",
-  "gemini-1.5-pro",
-];
-
 async function delay(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 async function generateWithRetry(
-  ai: GoogleGenerativeAI,
+  openai: OpenAI,
   prompt: string,
+  systemPrompt: string,
   maxRetries: number = 2
 ): Promise<string> {
   let lastError: any = null;
 
-  for (const modelName of MODEL_PRIORITY) {
-    for (let attempt = 0; attempt <= maxRetries; attempt++) {
-      try {
-        console.log(`Trying model: ${modelName} (attempt ${attempt + 1})`);
-        const model = ai.getGenerativeModel({ model: modelName });
-        const response = await model.generateContent(prompt);
-        return response.response.text();
-      } catch (e: any) {
-        lastError = e;
-        const status = e?.status || 0;
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    try {
+      console.log(`Trying DeepSeek API (attempt ${attempt + 1})`);
+      const completion = await openai.chat.completions.create({
+        messages: [
+          { role: "system", content: systemPrompt },
+          { role: "user", content: prompt }
+        ],
+        model: "deepseek-chat",
+      });
+      return completion.choices[0].message.content || "";
+    } catch (e: any) {
+      lastError = e;
+      const status = e?.status || 0;
 
-        if ((status === 429 || status === 503) && attempt < maxRetries) {
-          const waitTime = (attempt + 1) * 5000;
-          console.warn(`API error ${status} on ${modelName}, waiting ${waitTime / 1000}s...`);
-          await delay(waitTime);
-          continue;
-        }
-
-        console.warn(`Model ${modelName} failed: ${e.message}`);
-        break;
+      if ((status === 429 || status === 503 || status === 500) && attempt < maxRetries) {
+        const waitTime = (attempt + 1) * 3000;
+        console.warn(`API error ${status}, waiting ${waitTime / 1000}s...`);
+        await delay(waitTime);
+        continue;
       }
+
+      console.warn(`DeepSeek API failed: ${e.message}`);
+      break;
     }
   }
 
@@ -116,12 +115,15 @@ export async function POST(request: Request) {
     }
 
     // 5. Call AI Generation
-    const apiKey = process.env.GEMINI_API_KEY;
+    const apiKey = process.env.DEEPSEEK_API_KEY;
     if (!apiKey) {
-      return NextResponse.json({ error: "GEMINI_API_KEY is not configured." }, { status: 500 });
+      return NextResponse.json({ error: "DEEPSEEK_API_KEY is not configured." }, { status: 500 });
     }
 
-    const ai = new GoogleGenerativeAI(apiKey);
+    const openai = new OpenAI({
+      baseURL: 'https://api.deepseek.com',
+      apiKey: apiKey
+    });
     
     let tierInstruction = "";
     if (effectiveTier === 'max') {
@@ -130,8 +132,10 @@ export async function POST(request: Request) {
       tierInstruction = "INI ADALAH PELANGGAN TINGKAT PRO. Berikan detail yang sangat baik dan terstruktur rapi dengan edge cases yang jelas.";
     }
 
-    const fullPrompt = `${SYSTEM_PROMPT}\n${tierInstruction}\n\nIde Aplikasi:\n${userPrompt}`;
-    const fullContent = await generateWithRetry(ai, fullPrompt);
+    const finalSystemPrompt = `${SYSTEM_PROMPT}\n${tierInstruction}`;
+    const userMessage = `Ide Aplikasi:\n${userPrompt}`;
+
+    const fullContent = await generateWithRetry(openai, userMessage, finalSystemPrompt);
 
     if (!fullContent) {
       return NextResponse.json({ error: "AI returned an empty response. Please try again." }, { status: 500 });
@@ -169,15 +173,15 @@ export async function POST(request: Request) {
     });
 
   } catch (error: any) {
-    console.error("Error generating PRD:", error);
+    console.error("Error generating PRD with DeepSeek:", error);
 
     const status = error?.status || 0;
     let userMessage = error?.message || "An unexpected error occurred.";
 
     if (status === 429) {
-      userMessage = "Kuota API Gemini Anda sedang habis (rate limit). Silakan tunggu 1-2 menit lalu coba lagi.";
-    } else if (status === 503) {
-      userMessage = "Server AI Google sedang kelebihan beban (overloaded) secara global. Silakan tunggu beberapa saat dan coba tekan tombol lagi.";
+      userMessage = "Kuota API DeepSeek Anda sedang habis (rate limit) atau saldo tidak mencukupi.";
+    } else if (status === 503 || status === 500) {
+      userMessage = "Server AI DeepSeek sedang sibuk. Silakan tunggu beberapa saat dan coba lagi.";
     }
 
     return NextResponse.json(

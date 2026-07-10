@@ -1,38 +1,36 @@
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import OpenAI from "openai";
 import { NextResponse } from "next/server";
-
-const MODEL_PRIORITY = [
-  "gemini-2.5-flash",
-  "gemini-2.0-flash",
-  "gemini-2.0-flash-lite",
-];
 
 async function delay(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 async function generateWithRetry(
-  ai: GoogleGenerativeAI,
+  openai: OpenAI,
   prompt: string,
   maxRetries: number = 1
 ): Promise<string> {
   let lastError: any = null;
 
-  for (const modelName of MODEL_PRIORITY) {
-    for (let attempt = 0; attempt <= maxRetries; attempt++) {
-      try {
-        const model = ai.getGenerativeModel({ model: modelName });
-        const response = await model.generateContent(prompt);
-        return response.response.text();
-      } catch (e: any) {
-        lastError = e;
-        const status = e?.status || 0;
-        if ((status === 429 || status === 503) && attempt < maxRetries) {
-          await delay((attempt + 1) * 5000);
-          continue;
-        }
-        break;
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    try {
+      console.log(`Trying DeepSeek API for Revise PRD (attempt ${attempt + 1})`);
+      const completion = await openai.chat.completions.create({
+        messages: [
+          { role: "system", content: "Anda adalah Product Manager senior yang sedang merevisi dokumen PRD." },
+          { role: "user", content: prompt }
+        ],
+        model: "deepseek-chat",
+      });
+      return completion.choices[0].message.content || "";
+    } catch (e: any) {
+      lastError = e;
+      const status = e?.status || 0;
+      if ((status === 429 || status === 503 || status === 500) && attempt < maxRetries) {
+        await delay((attempt + 1) * 3000);
+        continue;
       }
+      break;
     }
   }
   throw lastError;
@@ -50,19 +48,20 @@ export async function POST(request: Request) {
       );
     }
 
-    const apiKey = process.env.GEMINI_API_KEY;
+    const apiKey = process.env.DEEPSEEK_API_KEY;
     if (!apiKey) {
       return NextResponse.json(
-        { error: "GEMINI_API_KEY is not configured." },
+        { error: "DEEPSEEK_API_KEY is not configured." },
         { status: 500 }
       );
     }
 
-    const ai = new GoogleGenerativeAI(apiKey);
+    const openai = new OpenAI({
+      baseURL: 'https://api.deepseek.com',
+      apiKey: apiKey
+    });
 
-    const prompt = `Anda adalah Product Manager senior yang sedang merevisi dokumen PRD.
-
-Berikut adalah PRD yang sedang aktif:
+    const prompt = `Berikut adalah PRD yang sedang aktif:
 ---
 ${currentPrd}
 ---
@@ -76,7 +75,7 @@ ATURAN:
 - Setelah pemisah tersebut, buatlah DAFTAR TUGAS (Task List) yang direvisi (berdasarkan PRD baru) dalam format Markdown (gunakan checkbox "- [ ]").
 - Terapkan revisi yang diminta oleh pengguna dengan tepat.`;
 
-    const fullContent = await generateWithRetry(ai, prompt);
+    const fullContent = await generateWithRetry(openai, prompt);
     
     // Parse PRD and Tasks
     const separator = "---TASKS_SEPARATOR---";
@@ -95,17 +94,19 @@ ATURAN:
       flowchart: taskContent,
     });
   } catch (error: any) {
-    console.error("Error revising PRD:", error);
+    console.error("Error revising PRD with DeepSeek:", error);
     const status = error?.status || 0;
     let userMessage = error?.message || "An unexpected error occurred.";
 
     if (status === 429) {
-      userMessage = "Kuota API sedang habis. Silakan tunggu 1-2 menit lalu coba lagi.";
+      userMessage = "Kuota API DeepSeek sedang habis. Silakan isi saldo dan coba lagi.";
+    } else if (status === 503 || status === 500) {
+      userMessage = "Server AI DeepSeek sedang sibuk. Silakan tunggu beberapa saat.";
     }
 
     return NextResponse.json(
       { error: userMessage },
-      { status: status === 429 ? 429 : 500 }
+      { status: status || 500 }
     );
   }
 }
