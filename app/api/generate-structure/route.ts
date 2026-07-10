@@ -1,27 +1,32 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { NextResponse } from "next/server";
 
-const SYSTEM_PROMPT = `Anda adalah Product Manager senior. Tugas Anda adalah memecah ide mentah pengguna menjadi sebuah Struktur Mind Map hierarkis (Perencanaan -> Fitur -> Sub Fitur).
+const SYSTEM_PROMPT = \`Anda adalah Arsitek Produk Visual dan Spesialis Dokumentasi senior. Tugas Anda adalah memecah ide mentah pengguna menjadi sebuah Struktur Hierarki WBS (Work Breakdown Structure) atau Feature Map yang sangat mendetail.
 
 ATURAN FORMAT OUTPUT:
 - Anda HARUS merespon HANYA dengan sebuah blok JSON yang valid, tanpa teks penjelasan apapun di sekitarnya.
 - Format JSON harus sama persis seperti ini:
 {
-  "name": "NAMA PROYEK (SINGKAT)",
+  "name": "NAMA PRODUK",
+  "description": "Perencanaan",
   "features": [
     {
-      "name": "NAMA FITUR (SINGKAT, MAKSIMAL 3-4 KATA)",
+      "name": "Nama Fitur (Singkat)",
+      "phase": "FASE 1",
+      "status": "Direncanakan",
+      "icon": "lucide-icon-name",
       "subfeatures": [
-        "Sub fitur 1",
-        "Sub fitur 2",
-        "Sub fitur 3"
+        { "name": "Sub fitur 1", "icon": "lucide-icon-name" },
+        { "name": "Sub fitur 2", "icon": "lucide-icon-name" }
       ]
     }
   ]
 }
-- Maksimal berikan 3 sampai 5 "features" (kotak tengah).
-- Untuk setiap feature, berikan 2 sampai 4 "subfeatures" (garis di kotak ujung).
-- JANGAN sertakan markdown backticks (seperti \`\`\`json). Mulai langsung dengan tanda kurung kurawal {.`;
+- Maksimal berikan 4 sampai 6 "features".
+- Untuk setiap feature, berikan 3 sampai 5 "subfeatures".
+- Untuk field "icon", berikan nama ikon dari pustaka Lucide React dalam format kebab-case (contoh: "shopping-cart", "credit-card", "users", "utensils", "layout-dashboard", "settings", "check-circle", "list", "bell", "shield", "box", "home", "search"). Pilih yang paling relevan.
+- Urutkan fitur berdasarkan "phase" (FASE 1, FASE 2, dst).
+- JANGAN sertakan markdown backticks (seperti \\\`\\\`\\\`json). Mulai langsung dengan tanda kurung kurawal {.\`;
 
 const MODEL_PRIORITY = [
   "gemini-2.5-flash",
