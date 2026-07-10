@@ -403,6 +403,11 @@ export default function Home() {
                 
                 {/* Overlay Lanjutkan Button */}
                 <div className="absolute top-6 right-6 z-10 flex gap-3">
+                  {error && (
+                    <div className="px-4 py-2 bg-rose-500/90 text-white rounded-xl font-body text-sm shadow-lg flex items-center justify-center mr-2">
+                      {error}
+                    </div>
+                  )}
                    <button
                     onClick={resetAll}
                     className="px-5 py-2.5 bg-rose-900/40 hover:bg-rose-900/60 border border-rose-500/20 text-rose-300 rounded-xl font-heading font-bold text-sm shadow-lg transition-colors"
