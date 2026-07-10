@@ -45,6 +45,18 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(url)
   }
 
+  const isAdminPage = request.nextUrl.pathname.startsWith('/admin')
+  const adminEmail = process.env.ADMIN_EMAIL || 'adjiprasetyo970@gmail.com'
+
+  if (user && isAdminPage) {
+    if (user.email !== adminEmail) {
+      // User is logged in but is NOT the admin, redirect to home
+      const url = request.nextUrl.clone()
+      url.pathname = '/'
+      return NextResponse.redirect(url)
+    }
+  }
+
   if (user && isLoginPage) {
     const url = request.nextUrl.clone()
     url.pathname = '/'
