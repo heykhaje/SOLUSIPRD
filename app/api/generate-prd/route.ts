@@ -1,7 +1,8 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { NextResponse } from "next/server";
+import { createClient } from "@/utils/supabase/server";
 
-const SYSTEM_PROMPT = `Anda adalah Product Manager senior. Ubah ide mentah ini menjadi dokumen PRD lengkap berformat Markdown yang berisi: 
+const SYSTEM_PROMPT = \`Anda adalah Product Manager senior. Ubah ide mentah ini menjadi dokumen PRD lengkap berformat Markdown yang berisi: 
 1) Latar Belakang
 2) User Roles
 3) Spesifikasi Fitur
@@ -12,7 +13,7 @@ ATURAN FORMAT OUTPUT:
 ---TASKS_SEPARATOR---
 - Setelah pemisah tersebut, buatlah DAFTAR TUGAS (Task List) yang sangat detail dalam format Markdown (gunakan checkbox "- [ ]"). 
 - Task List ini harus berisi langkah-langkah teknis dan fungsional yang siap dikerjakan oleh developer atau AI Coder untuk mewujudkan PRD tersebut.
-- Bagikan task berdasarkan fitur atau halaman (misal: "### Autentikasi", "### Database", dll).`;
+- Bagikan task berdasarkan fitur atau halaman (misal: "### Autentikasi", "### Database", dll).\`;
 
 const MODEL_PRIORITY = [
   "gemini-2.5-flash",
@@ -35,7 +36,7 @@ async function generateWithRetry(
   for (const modelName of MODEL_PRIORITY) {
     for (let attempt = 0; attempt <= maxRetries; attempt++) {
       try {
-        console.log(`Trying model: ${modelName} (attempt ${attempt + 1})`);
+        console.log(\`Trying model: \${modelName} (attempt \${attempt + 1})\`);
         const model = ai.getGenerativeModel({ model: modelName });
         const response = await model.generateContent(prompt);
         return response.response.text();
@@ -43,16 +44,14 @@ async function generateWithRetry(
         lastError = e;
         const status = e?.status || 0;
 
-        // If 429 (rate limit) or 503 (service unavailable), wait and retry same model
         if ((status === 429 || status === 503) && attempt < maxRetries) {
           const waitTime = (attempt + 1) * 5000;
-          console.warn(`API error ${status} on ${modelName}, waiting ${waitTime / 1000}s...`);
+          console.warn(\`API error \${status} on \${modelName}, waiting \${waitTime / 1000}s...\`);
           await delay(waitTime);
           continue;
         }
 
-        // For other errors or max retries reached, try next model
-        console.warn(`Model ${modelName} failed: ${e.message}`);
+        console.warn(\`Model \${modelName} failed: \${e.message}\`);
         break;
       }
     }
@@ -63,8 +62,17 @@ async function generateWithRetry(
 
 export async function POST(request: Request) {
   try {
+    // 1. Authentication
+    const supabase = await createClient();
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+
+    if (authError || !user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    // 2. Extract Request Body
     const body = await request.json();
-    const { prompt: userPrompt, tier } = body;
+    const { prompt: userPrompt } = body;
 
     if (!userPrompt || typeof userPrompt !== "string" || !userPrompt.trim()) {
       return NextResponse.json(
@@ -73,36 +81,80 @@ export async function POST(request: Request) {
       );
     }
 
-    const apiKey = process.env.GEMINI_API_KEY;
+    // 3. Fetch User Data from Supabase
+    // Using subscription_status as 'tier' based on existing database schema
+    const { data: profile, error: profileError } = await supabase
+      .from('profiles')
+      .select('subscription_status, usage_count')
+      .eq('id', user.id)
+      .single();
 
-    if (!apiKey) {
+    if (profileError) {
+      console.error("Error fetching profile:", profileError);
+      return NextResponse.json({ error: "Failed to fetch user profile." }, { status: 500 });
+    }
+
+    const tier = profile?.subscription_status || 'free';
+    const usageCount = profile?.usage_count || 0;
+
+    // Admin override (assuming admin email bypasses limits)
+    const isAdmin = user.email === 'adjiprasetyo970@gmail.com';
+    const effectiveTier = isAdmin ? 'max' : tier;
+
+    // 4. Limit Validation
+    let limit = 0;
+    if (effectiveTier === 'basic') limit = 5;
+    else if (effectiveTier === 'pro') limit = 15;
+    else if (effectiveTier === 'max') limit = Infinity;
+    
+    // If user is 'free' or unlisted tier, we might block them or give them 0 limit
+    // Assuming 'free' users aren't allowed at all based on requirements
+    if (effectiveTier !== 'max' && usageCount >= limit) {
       return NextResponse.json(
-        { error: "GEMINI_API_KEY is not configured. Please add it to your environment." },
-        { status: 500 }
+        { 
+          error: "LIMIT_REACHED", 
+          message: "Limit penggunaan Anda telah habis. Silakan upgrade plan Anda via Midtrans." 
+        },
+        { status: 403 }
       );
+    }
+
+    // 5. Call AI Generation
+    const apiKey = process.env.GEMINI_API_KEY;
+    if (!apiKey) {
+      return NextResponse.json({ error: "GEMINI_API_KEY is not configured." }, { status: 500 });
     }
 
     const ai = new GoogleGenerativeAI(apiKey);
     
-    // Add extra instructions based on tier
     let tierInstruction = "";
-    if (tier === 'max') {
+    if (effectiveTier === 'max') {
       tierInstruction = "INI ADALAH PELANGGAN TINGKAT MAX. Berikan detail teknis terdalam, spesifikasi paling komprehensif, arsitektur sistem lanjutan, dan analisa edge case paling lengkap. Hasilkan PRD terbaik yang pernah ada.";
-    } else if (tier === 'pro') {
+    } else if (effectiveTier === 'pro') {
       tierInstruction = "INI ADALAH PELANGGAN TINGKAT PRO. Berikan detail yang sangat baik dan terstruktur rapi dengan edge cases yang jelas.";
     }
 
-    const fullPrompt = `${SYSTEM_PROMPT}\n${tierInstruction}\n\nIde Aplikasi:\n${userPrompt}`;
+    const fullPrompt = \`\${SYSTEM_PROMPT}\\n\${tierInstruction}\\n\\nIde Aplikasi:\\n\${userPrompt}\`;
     const fullContent = await generateWithRetry(ai, fullPrompt);
 
     if (!fullContent) {
-      return NextResponse.json(
-        { error: "AI returned an empty response. Please try again." },
-        { status: 500 }
-      );
+      return NextResponse.json({ error: "AI returned an empty response. Please try again." }, { status: 500 });
     }
 
-    // Parse PRD and Tasks from the response
+    // 6. Increment Usage Count
+    if (effectiveTier !== 'max') {
+      const { error: updateError } = await supabase
+        .from('profiles')
+        .update({ usage_count: usageCount + 1 })
+        .eq('id', user.id);
+        
+      if (updateError) {
+        console.error("Failed to increment usage count:", updateError);
+        // Continue anyway so the user doesn't lose their generated PRD due to a DB update failure
+      }
+    }
+
+    // 7. Parse PRD and Tasks from the response
     const separator = "---TASKS_SEPARATOR---";
     let prdContent = fullContent;
     let taskContent = "";
@@ -113,11 +165,13 @@ export async function POST(request: Request) {
       taskContent = parts[1].trim();
     }
 
+    // 8. Return Response
     return NextResponse.json({
       success: true,
       prd: prdContent,
-      flowchart: taskContent, // keep the key name as 'flowchart' for frontend compatibility but it contains markdown tasks now
+      flowchart: taskContent,
     });
+
   } catch (error: any) {
     console.error("Error generating PRD:", error);
 
@@ -125,8 +179,7 @@ export async function POST(request: Request) {
     let userMessage = error?.message || "An unexpected error occurred.";
 
     if (status === 429) {
-      userMessage =
-        "Kuota API Gemini Anda sedang habis (rate limit). Silakan tunggu 1-2 menit lalu coba lagi.";
+      userMessage = "Kuota API Gemini Anda sedang habis (rate limit). Silakan tunggu 1-2 menit lalu coba lagi.";
     }
 
     return NextResponse.json(
