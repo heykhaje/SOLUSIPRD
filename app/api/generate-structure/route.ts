@@ -29,8 +29,11 @@ ATURAN FORMAT OUTPUT:
 - JANGAN sertakan markdown backticks (seperti \`\`\`json). Mulai langsung dengan tanda kurung kurawal {.`;
 
 const MODEL_PRIORITY = [
+  "gemini-1.5-flash-latest",
+  "gemini-1.5-pro-latest",
   "gemini-1.5-flash",
   "gemini-1.5-pro",
+  "gemini-1.0-pro",
 ];
 
 async function delay(ms: number) {
