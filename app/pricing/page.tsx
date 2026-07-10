@@ -110,7 +110,7 @@ export default function PricingPage() {
       id: 'max',
       name: 'Max',
       price: '130.000',
-      period: 'per bulan',
+      period: 'per 2 bulan',
       description: 'Akses penuh tanpa batas untuk tim profesional.',
       features: ['Akses Semua Fitur Pro', 'Respon AI Ultra Cepat', 'Prioritas Dukungan 24/7', 'Kustomisasi Prompt Khusus']
     }

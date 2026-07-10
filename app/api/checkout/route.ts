@@ -32,7 +32,7 @@ export async function POST(req: Request) {
       planName = 'Pro (1 Bulan)';
     } else if (planId === 'max') {
       amount = 130000;
-      planName = 'Max (1 Bulan)';
+      planName = 'Max (2 Bulan)';
     } else {
       return NextResponse.json({ error: 'Invalid plan ID' }, { status: 400 });
     }
