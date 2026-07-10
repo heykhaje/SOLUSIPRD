@@ -50,11 +50,13 @@ async function generateWithRetry(
       } catch (e: any) {
         lastError = e;
         const status = e?.status || 0;
-        if (status === 429 && attempt < maxRetries) {
-          const waitTime = (attempt + 1) * 15000;
-          await delay(waitTime);
+        // Retry on 429 (Rate Limit) or 503 (Service Unavailable)
+        if ((status === 429 || status === 503) && attempt < maxRetries) {
+          const waitTime = (attempt + 1) * 3000; // wait 3s, 6s for better UX, or 15000 if 429? Let's use 5000ms.
+          await delay((attempt + 1) * 5000);
           continue;
         }
+        // For other errors (like 404 Model Not Found), break and try next model
         break;
       }
     }

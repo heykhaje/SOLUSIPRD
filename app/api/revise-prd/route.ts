@@ -26,8 +26,9 @@ async function generateWithRetry(
         return response.response.text();
       } catch (e: any) {
         lastError = e;
-        if (e?.status === 429 && attempt < maxRetries) {
-          await delay((attempt + 1) * 10000);
+        const status = e?.status || 0;
+        if ((status === 429 || status === 503) && attempt < maxRetries) {
+          await delay((attempt + 1) * 5000);
           continue;
         }
         break;

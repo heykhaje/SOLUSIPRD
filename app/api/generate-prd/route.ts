@@ -43,10 +43,10 @@ async function generateWithRetry(
         lastError = e;
         const status = e?.status || 0;
 
-        // If 429 (rate limit), wait and retry same model
-        if (status === 429 && attempt < maxRetries) {
-          const waitTime = (attempt + 1) * 15000; // 15s, 30s
-          console.warn(`Rate limited on ${modelName}, waiting ${waitTime / 1000}s...`);
+        // If 429 (rate limit) or 503 (service unavailable), wait and retry same model
+        if ((status === 429 || status === 503) && attempt < maxRetries) {
+          const waitTime = (attempt + 1) * 5000;
+          console.warn(`API error ${status} on ${modelName}, waiting ${waitTime / 1000}s...`);
           await delay(waitTime);
           continue;
         }
