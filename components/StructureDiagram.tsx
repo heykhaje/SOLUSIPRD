@@ -11,6 +11,7 @@ import ReactFlow, {
   type NodeProps,
   ReactFlowProvider,
   MarkerType,
+  BackgroundVariant,
 } from 'reactflow';
 import 'reactflow/dist/style.css';
 import * as LucideIcons from 'lucide-react';
@@ -343,7 +344,7 @@ function FlowInner({ data }: StructureDiagramProps) {
       proOptions={{ hideAttribution: true }}
       style={{ background: '#0f172a', width: '100%', height: '100%' }}
     >
-      <Background color="#334155" gap={20} size={1.5} variant="dots" />
+      <Background color="#334155" gap={20} size={1.5} variant={BackgroundVariant.Dots} />
       <Controls
         position="bottom-left"
         showInteractive={false}
