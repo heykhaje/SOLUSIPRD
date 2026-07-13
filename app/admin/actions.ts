@@ -68,3 +68,65 @@ export async function updateUserSubscription(userId: string, status: string | nu
     return { success: false, error: err.message };
   }
 }
+
+export async function getSystemPrompt() {
+  const supabase = createAdminClient();
+  const DEFAULT_PROMPT = `Anda adalah Product Manager senior. Ubah ide mentah ini menjadi dokumen PRD lengkap berformat Markdown yang berisi:
+1) Latar Belakang
+2) User Roles
+3) Spesifikasi Fitur
+
+ATURAN FORMAT OUTPUT (SANGAT PENTING):
+- Berikan dokumen PRD dalam format Markdown standar yang rapi.
+- SETELAH SELESAI MENULIS PRD, ANDA WAJIB MENAMBAHKAN PEMISAH TEPAT SEPERTI INI TANPA KUTIP ATAU FORMAT LAIN:
+---TASKS_SEPARATOR---
+- WAJIB: Setelah pemisah tersebut, buatlah DAFTAR TUGAS (Task List) teknis dalam format Markdown (gunakan checkbox "- [ ]"). 
+- Kegagalan menyertakan "---TASKS_SEPARATOR---" akan membuat sistem error. Jangan sampai lupa!
+- Bagikan task berdasarkan fitur atau halaman (misal: "### Autentikasi", "### Database", dll).`;
+
+  try {
+    const { data, error } = await supabase
+      .from('app_settings')
+      .select('value')
+      .eq('key', 'system_prompt')
+      .maybeSingle();
+
+    if (error) {
+      console.error('Error fetching system prompt:', error);
+      return { success: false, prompt: DEFAULT_PROMPT };
+    }
+
+    if (!data) {
+      return { success: true, prompt: DEFAULT_PROMPT };
+    }
+
+    return { success: true, prompt: data.value };
+  } catch (err: any) {
+    console.error('Unexpected error in getSystemPrompt:', err);
+    return { success: false, prompt: DEFAULT_PROMPT };
+  }
+}
+
+export async function updateSystemPrompt(newPrompt: string) {
+  const supabase = createAdminClient();
+
+  try {
+    const { error } = await supabase
+      .from('app_settings')
+      .upsert({ 
+        key: 'system_prompt', 
+        value: newPrompt,
+        updated_at: new Date().toISOString()
+      }, { onConflict: 'key' });
+
+    if (error) {
+      console.error('Error updating system prompt:', error);
+      return { success: false, error: error.message };
+    }
+
+    return { success: true };
+  } catch (err: any) {
+    console.error('Unexpected error in updateSystemPrompt:', err);
+    return { success: false, error: err.message };
+  }
+}

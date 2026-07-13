@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { getAdminDashboardData } from './actions';
+import { getAdminDashboardData, getSystemPrompt, updateSystemPrompt } from './actions';
 
 export default function AdminDashboardPage() {
   const [metrics, setMetrics] = useState({
@@ -14,14 +14,25 @@ export default function AdminDashboardPage() {
   const [profiles, setProfiles] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedUser, setSelectedUser] = useState<any | null>(null);
+  const [systemPrompt, setSystemPrompt] = useState<string>('');
+  const [isSavingPrompt, setIsSavingPrompt] = useState(false);
+  const [promptMessage, setPromptMessage] = useState({ text: '', type: '' });
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const result = await getAdminDashboardData();
+        const [result, promptResult] = await Promise.all([
+          getAdminDashboardData(),
+          getSystemPrompt()
+        ]);
+        
         if (result.success && result.data) {
           setMetrics(result.data.metrics);
           setProfiles(result.data.profiles);
+        }
+
+        if (promptResult.success && promptResult.prompt) {
+          setSystemPrompt(promptResult.prompt);
         }
       } catch (err) {
         console.error("Failed to fetch dashboard data", err);
@@ -105,6 +116,57 @@ export default function AdminDashboardPage() {
               -2%
             </span>
             <span className="text-xs font-body text-white/50">dari kuota bulanan</span>
+          </div>
+        </div>
+      </section>
+
+      {/* System Prompt Editor */}
+      <section className="bg-[#0a0f25]/50 backdrop-blur-xl border border-white/10 rounded-2xl shadow-[0_8px_32px_rgba(0,0,0,0.05)] overflow-hidden flex flex-col">
+        <div className="px-6 py-5 border-b border-white/10 bg-[#1e293b]/50 backdrop-blur-md flex items-center justify-between">
+          <h3 className="font-heading font-extrabold text-lg text-[#f8fafc]">
+            Pengaturan System Prompt AI
+          </h3>
+          {promptMessage.text && (
+            <span className={`text-xs font-bold px-3 py-1 rounded-md ${promptMessage.type === 'success' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-rose-500/20 text-rose-400'}`}>
+              {promptMessage.text}
+            </span>
+          )}
+        </div>
+        <div className="p-6 flex flex-col gap-4">
+          <p className="font-body text-sm text-white/60">
+            Prompt ini adalah "otak" utama dari AI Generator PRD Anda. Anda bisa menyesuaikan aturan, struktur, dan gaya bahasa yang digunakan AI saat menghasilkan output.
+          </p>
+          <div className="bg-rose-500/10 border border-rose-500/20 rounded-xl p-4">
+            <p className="font-heading font-bold text-xs text-rose-400 mb-1">⚠️ PERINGATAN PENTING</p>
+            <p className="font-body text-xs text-white/70">
+              Anda wajib mempertahankan tulisan <strong>---TASKS_SEPARATOR---</strong> dan instruksi tentang <strong>DAFTAR TUGAS</strong> di dalam prompt ini agar alur "Lanjutkan ke PRD" tidak rusak/error.
+            </p>
+          </div>
+          <textarea
+            value={systemPrompt}
+            onChange={(e) => setSystemPrompt(e.target.value)}
+            className="w-full h-80 bg-white/5 border border-white/10 rounded-xl p-4 font-mono text-sm text-white/80 focus:outline-none focus:border-indigo-500/50 focus:ring-1 focus:ring-indigo-500/50 transition-all custom-scrollbar"
+            placeholder="Tulis system prompt di sini..."
+          />
+          <div className="flex justify-end">
+            <button
+              onClick={async () => {
+                setIsSavingPrompt(true);
+                setPromptMessage({ text: 'Menyimpan...', type: 'success' });
+                const res = await updateSystemPrompt(systemPrompt);
+                if (res.success) {
+                  setPromptMessage({ text: 'Prompt berhasil disimpan!', type: 'success' });
+                  setTimeout(() => setPromptMessage({ text: '', type: '' }), 3000);
+                } else {
+                  setPromptMessage({ text: 'Gagal menyimpan prompt.', type: 'error' });
+                }
+                setIsSavingPrompt(false);
+              }}
+              disabled={isSavingPrompt || isLoading}
+              className="px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-heading font-bold text-sm rounded-xl transition-colors disabled:opacity-50 flex items-center gap-2"
+            >
+              {isSavingPrompt ? 'Menyimpan...' : 'Simpan Perubahan'}
+            </button>
           </div>
         </div>
       </section>

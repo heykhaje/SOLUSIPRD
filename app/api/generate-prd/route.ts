@@ -2,7 +2,7 @@ import OpenAI from "openai";
 import { NextResponse } from "next/server";
 import { createClient } from "@/utils/supabase/server";
 
-const SYSTEM_PROMPT = `Anda adalah Product Manager senior. Ubah ide mentah ini menjadi dokumen PRD lengkap berformat Markdown yang berisi:
+const DEFAULT_SYSTEM_PROMPT = `Anda adalah Product Manager senior. Ubah ide mentah ini menjadi dokumen PRD lengkap berformat Markdown yang berisi:
 1) Latar Belakang
 2) User Roles
 3) Spesifikasi Fitur
@@ -132,7 +132,16 @@ export async function POST(request: Request) {
       tierInstruction = "INI ADALAH PELANGGAN TINGKAT PRO. Berikan detail yang sangat baik dan terstruktur rapi dengan edge cases yang jelas.";
     }
 
-    const finalSystemPrompt = `${SYSTEM_PROMPT}\n${tierInstruction}`;
+    // 4.5 Fetch Dynamic System Prompt
+    const { data: promptData, error: promptError } = await supabase
+      .from('app_settings')
+      .select('value')
+      .eq('key', 'system_prompt')
+      .maybeSingle();
+      
+    const baseSystemPrompt = (promptData && promptData.value) ? promptData.value : DEFAULT_SYSTEM_PROMPT;
+
+    const finalSystemPrompt = `${baseSystemPrompt}\n${tierInstruction}`;
     const userMessage = `Ide Aplikasi:\n${userPrompt}`;
 
     const fullContent = await generateWithRetry(openai, userMessage, finalSystemPrompt);
