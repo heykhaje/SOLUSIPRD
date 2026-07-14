@@ -533,7 +533,7 @@ export default function Home() {
             <div className="w-full h-full flex flex-col flex-1 animate-in fade-in duration-300 relative">
               <div className="flex-1 bg-[#0a0f25]/50 backdrop-blur-xl overflow-hidden flex flex-col relative min-h-[calc(100vh-80px)] border-t border-white/10">
                 <div className="absolute inset-0">
-                  <TaskDiagram markdown={flowchartResult} />
+                  <TaskDiagram markdown={flowchartResult} structureData={structureResult} />
                 </div>
                 
                 {/* Header overlay */}
