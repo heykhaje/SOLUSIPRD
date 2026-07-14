@@ -27,6 +27,8 @@ export default function Home() {
   const [isCopiedPrd, setIsCopiedPrd] = useState(false);
   const [isCopiedTasks, setIsCopiedTasks] = useState(false);
   
+  const projectName = structureResult?.name ? structureResult.name.replace(/[^a-zA-Z0-9\s]/g, '').trim().replace(/\s+/g, '-') : new Date().getTime().toString();
+  
   const router = useRouter();
 
   const loadingMessages = [
@@ -410,10 +412,16 @@ export default function Home() {
                     </div>
                   )}
                    <button
+                    onClick={() => setStep(1)}
+                    className="px-5 py-2.5 bg-slate-800/40 hover:bg-slate-700/60 border border-slate-600/30 text-slate-300 rounded-xl font-heading font-bold text-sm shadow-lg transition-colors flex items-center gap-2"
+                  >
+                    &lt; Kembali
+                  </button>
+                   <button
                     onClick={resetAll}
                     className="px-5 py-2.5 bg-rose-900/40 hover:bg-rose-900/60 border border-rose-500/20 text-rose-300 rounded-xl font-heading font-bold text-sm shadow-lg transition-colors"
                   >
-                    Ulangi
+                    Ulangi Baru
                   </button>
                   <button
                     onClick={handleGeneratePrd}
@@ -442,7 +450,7 @@ export default function Home() {
                   <h2 className="font-heading text-base font-extrabold text-[#f8fafc]">PRD Document</h2>
                   <div className="flex items-center gap-3">
                     <button
-                      onClick={() => downloadMarkdown(prdResult, `PRD-${new Date().getTime()}.md`)}
+                      onClick={() => downloadMarkdown(prdResult, `PRD-${projectName}.md`)}
                       className="text-xs font-heading font-bold text-[#f8fafc] hover:text-indigo-400 uppercase tracking-wider flex items-center gap-1.5 transition-colors"
                     >
                       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
@@ -516,7 +524,13 @@ export default function Home() {
                   </div>
                 </div>
 
-                <div className="flex justify-end">
+                <div className="flex justify-between items-center mt-6">
+                   <button
+                    onClick={() => setStep(2)}
+                    className="px-6 py-4 bg-slate-800 hover:bg-slate-700 text-white rounded-xl font-heading font-bold text-sm shadow-lg border border-slate-700 transition-colors flex items-center justify-center gap-2"
+                  >
+                    &lt; Kembali
+                  </button>
                    <button
                     onClick={() => setStep(4)}
                     disabled={!flowchartResult}
@@ -542,7 +556,7 @@ export default function Home() {
                   <div className="h-4 w-[1px] bg-white/20"></div>
                   <div className="flex items-center gap-3">
                     <button
-                      onClick={() => downloadMarkdown(flowchartResult, `Tasks-${new Date().getTime()}.md`)}
+                      onClick={() => downloadMarkdown(flowchartResult, `Tasks-${projectName}.md`)}
                       className="text-xs font-heading font-bold text-[#f8fafc] hover:text-indigo-400 uppercase tracking-wider flex items-center gap-1.5 transition-colors"
                     >
                       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
@@ -559,6 +573,12 @@ export default function Home() {
 
                 {/* Selesai Button Overlay */}
                 <div className="absolute bottom-8 right-8 z-[60] flex gap-3 shadow-2xl">
+                  <button
+                    onClick={() => setStep(3)}
+                    className="px-6 py-3 bg-slate-800/80 hover:bg-slate-700 text-white border border-slate-600/30 rounded-xl font-heading font-bold text-sm shadow-lg transition-colors flex items-center justify-center gap-2"
+                  >
+                    &lt; Kembali
+                  </button>
                   <button
                     onClick={resetAll}
                     className="px-6 py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-heading font-bold text-sm shadow-[0_0_20px_rgba(52,211,153,0.4)] transition-colors"
