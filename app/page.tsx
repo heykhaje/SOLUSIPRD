@@ -4,6 +4,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import ReactMarkdown from 'react-markdown';
 import DitherBackground from '@/components/backgrounds/DitherBackground';
 import StructureDiagram from '@/components/StructureDiagram';
+import TaskDiagram from '@/components/TaskDiagram';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/utils/supabase/client';
 
@@ -338,7 +339,7 @@ export default function Home() {
         </header>
 
         {/* Main Content */}
-        <main className={`flex-1 flex flex-col min-h-[calc(100vh-80px)] ${step === 2 ? 'p-0' : 'p-6 lg:p-10'}`}>
+        <main className={`flex-1 flex flex-col min-h-[calc(100vh-80px)] ${(step === 2 || step === 4) ? 'p-0' : 'p-6 lg:p-10'}`}>
           {step === 1 && (
             /* Ideation Form State */
             <div className="flex-1 w-full max-w-2xl mx-auto flex flex-col justify-center animate-in fade-in duration-300">
@@ -529,10 +530,16 @@ export default function Home() {
           )}
 
           {step === 4 && flowchartResult && (
-            <div className="w-full max-w-5xl mx-auto h-full flex flex-col animate-in fade-in duration-300 flex-1 min-h-[600px]">
-              <div className="flex-1 bg-[#0a0f25]/50 backdrop-blur-xl border border-white/10 shadow-[0_8px_32px_rgba(0,0,0,0.05)] rounded-2xl flex flex-col overflow-hidden">
-                <div className="px-6 py-4 border-b border-white/10 bg-[#1e293b]/50 backdrop-blur-md flex items-center justify-between flex-shrink-0">
-                  <h2 className="font-heading text-base font-extrabold text-[#f8fafc]">Development Task List</h2>
+            <div className="w-full h-full flex flex-col flex-1 animate-in fade-in duration-300 relative">
+              <div className="flex-1 bg-[#0a0f25]/50 backdrop-blur-xl overflow-hidden flex flex-col relative min-h-[calc(100vh-80px)] border-t border-white/10">
+                <div className="absolute inset-0">
+                  <TaskDiagram markdown={flowchartResult} />
+                </div>
+                
+                {/* Header overlay */}
+                <div className="absolute top-6 left-6 z-10 bg-[#1e293b]/80 backdrop-blur-md px-6 py-4 rounded-2xl border border-white/10 flex items-center gap-4 shadow-2xl">
+                  <h2 className="font-heading text-lg font-extrabold text-[#f8fafc]">Development Tasks</h2>
+                  <div className="h-4 w-[1px] bg-white/20"></div>
                   <div className="flex items-center gap-3">
                     <button
                       onClick={() => downloadMarkdown(flowchartResult, `Tasks-${new Date().getTime()}.md`)}
@@ -545,28 +552,25 @@ export default function Home() {
                       onClick={handleCopyTasks}
                       className="text-xs font-heading font-bold text-[#f8fafc] hover:text-indigo-400 uppercase tracking-wider flex items-center gap-1.5 transition-colors"
                     >
-                      {isCopiedTasks ? 'Copied!' : 'Copy'}
+                      {isCopiedTasks ? 'Copied!' : 'Copy Text'}
                     </button>
                   </div>
                 </div>
-                <div className="flex-1 overflow-y-auto p-8 custom-scrollbar">
-                  <article className="prose prose-slate prose-invert max-w-none prose-headings:font-heading prose-headings:font-extrabold prose-p:font-body prose-li:font-body prose-a:text-indigo-400">
-                    <ReactMarkdown>{flowchartResult}</ReactMarkdown>
-                  </article>
-                </div>
-              </div>
-              <div className="mt-6 flex justify-end">
+
+                {/* Selesai Button Overlay */}
+                <div className="absolute bottom-8 right-8 z-[60] flex gap-3 shadow-2xl">
                   <button
                     onClick={resetAll}
-                    className="px-6 py-3 bg-emerald-600/20 hover:bg-emerald-600/40 border border-emerald-500/30 text-emerald-400 rounded-xl font-heading font-bold text-sm transition-colors"
+                    className="px-6 py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-heading font-bold text-sm shadow-[0_0_20px_rgba(52,211,153,0.4)] transition-colors"
                   >
                     Selesai & Buat Proyek Baru
                   </button>
+                </div>
               </div>
             </div>
           )}
         </main>
-        {step !== 2 && (
+        {step !== 2 && step !== 4 && (
           <footer className="w-full py-6 text-center relative z-10 flex-shrink-0">
             <p className="font-heading text-xs font-bold text-white/40 tracking-wider">
               &copy; 2026 by Adji.DEV
