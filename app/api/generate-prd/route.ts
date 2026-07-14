@@ -133,15 +133,22 @@ export async function POST(request: Request) {
       tierInstruction = "INI ADALAH PELANGGAN TINGKAT PRO. Berikan detail yang sangat baik dan terstruktur rapi dengan edge cases yang jelas.";
     }
 
-    // 4.5 Fetch Dynamic System Prompt
-    const adminSupabase = createAdminClient();
-    const { data: promptData, error: promptError } = await adminSupabase
-      .from('app_settings')
-      .select('value')
-      .eq('key', 'system_prompt')
-      .maybeSingle();
-      
-    const baseSystemPrompt = (promptData && promptData.value) ? promptData.value : DEFAULT_SYSTEM_PROMPT;
+    // 4.5 Determine System Prompt based on Tier
+    let baseSystemPrompt = DEFAULT_SYSTEM_PROMPT;
+
+    // Only Pro and Max users get the advanced dynamic prompt from Admin settings
+    if (effectiveTier === 'pro' || effectiveTier === 'max') {
+      const adminSupabase = createAdminClient();
+      const { data: promptData } = await adminSupabase
+        .from('app_settings')
+        .select('value')
+        .eq('key', 'system_prompt')
+        .maybeSingle();
+        
+      if (promptData && promptData.value) {
+        baseSystemPrompt = promptData.value;
+      }
+    }
 
     const finalSystemPrompt = `${baseSystemPrompt}\n${tierInstruction}`;
     const userMessage = `Ide Aplikasi:\n${userPrompt}`;
