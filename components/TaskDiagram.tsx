@@ -105,89 +105,55 @@ function RootNode({ data, isConnectable }: NodeProps<{ label: string; descriptio
           {data.description || 'Perencanaan'}
         </span>
       </div>
-
-      <Handle
-        type="source"
-        position={Position.Right}
-        isConnectable={isConnectable}
-        style={{ background: '#94a3b8', border: 'none', width: 6, height: 6, right: -3 }}
-      />
+      <Handle type="source" position={Position.Right} isConnectable={isConnectable} style={{ background: '#94a3b8', border: 'none', width: 6, height: 6, right: -3 }} />
     </div>
   );
 }
 
-const TaskList = ({ tasks }: { tasks: TaskItem[] }) => {
-  if (!tasks || tasks.length === 0) return null;
-  return (
-    <div style={{ padding: '12px 16px', display: 'flex', flexDirection: 'column', gap: '8px', borderTop: '1px solid rgba(255, 255, 255, 0.05)' }}>
-      {tasks.map((task, idx) => (
-        <div key={idx} style={{ display: 'flex', alignItems: 'flex-start', gap: '10px' }}>
-          <div style={{
-            marginTop: '2px',
-            width: 14,
-            height: 14,
-            borderRadius: 3,
-            border: '1px solid rgba(255,255,255,0.2)',
-            background: task.checked ? '#38bdf8' : 'rgba(255,255,255,0.05)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            flexShrink: 0
-          }}>
-            {task.checked && <DynamicIcon name="check" size={10} color="#fff" />}
-          </div>
-          <span style={{ fontSize: 12, color: '#cbd5e1', lineHeight: '1.4' }}>
-            {task.text}
-          </span>
-        </div>
-      ))}
-    </div>
-  );
-};
-
-function FeatureTaskNode({ data, isConnectable }: NodeProps<{ label: string; icon: string; status: string; phase: string; tasks: TaskItem[] }>) {
+// Exactly like FeatureNode in WBS
+function FeatureNode({ data, isConnectable }: NodeProps<{ label: string; icon: string; status: string; phase: string }>) {
   return (
     <div
       style={{
-        minWidth: 280,
-        maxWidth: 340,
+        minWidth: 240,
+        padding: '16px',
         borderRadius: 12,
         border: '1px solid rgba(255, 255, 255, 0.1)',
         background: '#1e293b',
         boxShadow: '0 8px 32px rgba(0,0,0,0.3)',
         position: 'relative',
-        display: 'flex',
-        flexDirection: 'column'
       }}
     >
       <Handle type="target" position={Position.Left} isConnectable={isConnectable} style={{ background: '#94a3b8', border: 'none', width: 6, height: 6, left: -3 }} />
       <Handle type="source" position={Position.Right} isConnectable={isConnectable} style={{ background: '#94a3b8', border: 'none', width: 6, height: 6, right: -3 }} />
 
-      {/* Header */}
-      <div style={{ padding: '16px', display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <div style={{ width: 36, height: 36, borderRadius: 8, background: '#0f172a', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#38bdf8' }}>
-            <DynamicIcon name={data.icon || 'box'} size={18} />
-          </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-            <span style={{ fontWeight: 700, fontSize: 14, color: '#f8fafc' }}>{data.label}</span>
-            <span style={{ fontSize: 10, color: '#94a3b8', fontWeight: 600, letterSpacing: '0.05em' }}>{data.phase || 'PHASE 1'}</span>
-          </div>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+        <div style={{ padding: '4px 8px', borderRadius: 4, background: 'rgba(255,255,255,0.05)', fontSize: 9, fontWeight: 700, color: '#94a3b8', letterSpacing: '0.1em' }}>
+          {data.phase}
+        </div>
+        <div style={{ width: 6, height: 6, borderRadius: '50%', background: data.status === 'Selesai' ? '#10b981' : data.status === 'Proses' ? '#f59e0b' : '#64748b' }} />
+      </div>
+
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+        <div style={{ width: 40, height: 40, borderRadius: 10, background: '#0f172a', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#38bdf8' }}>
+          <DynamicIcon name={data.icon || 'box'} size={20} />
+        </div>
+        <div style={{ display: 'flex', flexDirection: 'column' }}>
+          <span style={{ fontWeight: 700, fontSize: 14, color: '#f8fafc' }}>
+            {data.label}
+          </span>
         </div>
       </div>
-      
-      {/* Task List */}
-      <TaskList tasks={data.tasks} />
     </div>
   );
 }
 
-function SubfeatureTaskNode({ data, isConnectable }: NodeProps<{ name: string; icon: string; tasks: TaskItem[] }>) {
+// Exactly like SubfeatureNode in WBS, but without items inside
+function SubfeatureNode({ data, isConnectable }: NodeProps<{ name: string; icon: string }>) {
   return (
     <div
       style={{
-        minWidth: 260,
-        maxWidth: 320,
+        minWidth: 200,
         borderRadius: 12,
         border: '1px solid rgba(255, 255, 255, 0.1)',
         background: '#1e293b',
@@ -198,31 +164,79 @@ function SubfeatureTaskNode({ data, isConnectable }: NodeProps<{ name: string; i
       }}
     >
       <Handle type="target" position={Position.Left} isConnectable={isConnectable} style={{ background: '#94a3b8', border: 'none', width: 6, height: 6, left: -3 }} />
+      <Handle type="source" position={Position.Right} isConnectable={isConnectable} style={{ background: '#94a3b8', border: 'none', width: 6, height: 6, right: -3 }} />
 
-      {/* Header */}
-      <div style={{
-        padding: '12px 16px',
-        borderBottom: data.tasks && data.tasks.length > 0 ? 'none' : '1px solid rgba(255, 255, 255, 0.05)',
-        display: 'flex',
-        alignItems: 'center',
-        gap: 12,
-      }}>
+      <div style={{ padding: '12px 16px', display: 'flex', alignItems: 'center', gap: 12 }}>
         <div style={{ width: 24, height: 24, borderRadius: 6, background: '#0f172a', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#94a3b8' }}>
           <DynamicIcon name={data.icon || 'box'} size={12} />
         </div>
-        <span style={{ fontSize: 13, color: '#e2e8f0', fontWeight: 600 }}>{data.name}</span>
+        <span style={{ fontSize: 13, color: '#e2e8f0', fontWeight: 600 }}>
+          {data.name}
+        </span>
       </div>
+    </div>
+  );
+}
 
+// NEW: Task List Node (Spawns horizontally from Features/Subfeatures)
+function TaskListNode({ data, isConnectable }: NodeProps<{ title: string; tasks: TaskItem[] }>) {
+  return (
+    <div
+      style={{
+        minWidth: 280,
+        maxWidth: 340,
+        borderRadius: 12,
+        border: '1px solid rgba(56, 189, 248, 0.3)', // cyan border for emphasis
+        background: '#0f172a',
+        boxShadow: '0 8px 32px rgba(0,0,0,0.4)',
+        position: 'relative',
+        display: 'flex',
+        flexDirection: 'column'
+      }}
+    >
+      <Handle type="target" position={Position.Left} isConnectable={isConnectable} style={{ background: '#38bdf8', border: 'none', width: 6, height: 6, left: -3 }} />
+
+      {/* Header */}
+      <div style={{ padding: '12px 16px', borderBottom: '1px solid rgba(255, 255, 255, 0.05)', display: 'flex', alignItems: 'center', gap: 10, background: 'rgba(56, 189, 248, 0.05)' }}>
+         <DynamicIcon name="list-checks" size={14} color="#38bdf8" />
+         <span style={{ fontWeight: 700, fontSize: 12, color: '#38bdf8', letterSpacing: '0.05em' }}>
+           TASKS: {data.title.toUpperCase()}
+         </span>
+      </div>
+      
       {/* Task List */}
-      <TaskList tasks={data.tasks} />
+      <div style={{ padding: '12px 16px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+        {data.tasks.map((task, idx) => (
+          <div key={idx} style={{ display: 'flex', alignItems: 'flex-start', gap: '10px' }}>
+            <div style={{
+              marginTop: '2px',
+              width: 14,
+              height: 14,
+              borderRadius: 3,
+              border: '1px solid rgba(255,255,255,0.2)',
+              background: task.checked ? '#38bdf8' : 'rgba(255,255,255,0.05)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              flexShrink: 0
+            }}>
+              {task.checked && <DynamicIcon name="check" size={10} color="#fff" />}
+            </div>
+            <span style={{ fontSize: 12, color: '#cbd5e1', lineHeight: '1.4' }}>
+              {task.text}
+            </span>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
 
 const nodeTypes = {
   rootTaskNode: RootNode,
-  featureTaskNode: FeatureTaskNode,
-  subfeatureTaskNode: SubfeatureTaskNode,
+  featureTaskNode: FeatureNode,
+  subfeatureTaskNode: SubfeatureNode,
+  taskListNode: TaskListNode,
 };
 
 /* ─────────────────────────────────────────────
@@ -272,7 +286,7 @@ function parseMarkdownTasks(markdown: string) {
 }
 
 /* ─────────────────────────────────────────────
-   Flow Builder Logic (Merging Structure + Tasks)
+   Flow Builder Logic (Branching Tasks)
    ───────────────────────────────────────────── */
 function buildCombinedFlowData(structure: StructureData | null, markdown: string) {
   const nodes: Node[] = [];
@@ -280,34 +294,30 @@ function buildCombinedFlowData(structure: StructureData | null, markdown: string
   const parsedCategories = parseMarkdownTasks(markdown);
 
   const X_SPACING = 380;
-  const Y_SPACING_BASE = 150;
   
-  // Helper to find tasks for a specific name
   const findTasksFor = (name: string) => {
     const target = name.toLowerCase();
     const cat = parsedCategories.find(c => {
       const cTitle = c.title.toLowerCase();
-      // Try exact, or if AI added extra words like "Fitur Autentikasi" vs "Autentikasi"
       return cTitle === target || cTitle.includes(target) || target.includes(cTitle);
     });
     
     if (cat) {
-      cat.title = `_USED_${cat.title}`; // mark as used so we can collect unused later
+      cat.title = `_USED_${cat.title}`; 
       return cat.tasks;
     }
     return [];
   };
 
-  // If no structure data, just fallback to standard horizontal layout (like previous iteration)
   if (!structure) {
     let currentY = 0;
     nodes.push({ id: 'root', type: 'rootTaskNode', position: { x: 0, y: 0 }, data: { label: 'Tasks' } });
     parsedCategories.forEach((cat, idx) => {
       nodes.push({
         id: `cat-${idx}`,
-        type: 'featureTaskNode',
+        type: 'taskListNode',
         position: { x: X_SPACING, y: currentY },
-        data: { label: cat.title, icon: 'folder', phase: 'TUGAS', tasks: cat.tasks }
+        data: { title: cat.title, tasks: cat.tasks }
       });
       edges.push({ id: `e-r-${idx}`, source: 'root', target: `cat-${idx}`, type: 'smoothstep', style: { stroke: '#475569' } });
       currentY += 100 + (cat.tasks.length * 28) + 40;
@@ -315,14 +325,12 @@ function buildCombinedFlowData(structure: StructureData | null, markdown: string
     return { nodes, edges };
   }
 
-  // --- MERGE LOGIC ---
   let currentY = 0;
-  const rootYAnchor = currentY;
-
+  
   nodes.push({
     id: 'root',
     type: 'rootTaskNode',
-    position: { x: 0, y: 0 }, // We'll center this later
+    position: { x: 0, y: 0 },
     data: { label: structure.name, description: 'Development Tasks' },
   });
 
@@ -330,17 +338,20 @@ function buildCombinedFlowData(structure: StructureData | null, markdown: string
     const featureId = `feature-${fIndex}`;
     const featureTasks = findTasksFor(feature.name);
     
-    const featureNodeY = currentY;
+    // Y position for this entire feature block (feature + subfeatures + task nodes)
+    const featureStartY = currentY;
+    let maxBlockY = currentY;
+
+    // Place Feature Node
     nodes.push({
       id: featureId,
       type: 'featureTaskNode',
-      position: { x: X_SPACING, y: featureNodeY },
+      position: { x: X_SPACING, y: featureStartY },
       data: { 
         label: feature.name,
         icon: feature.icon,
         status: feature.status,
         phase: feature.phase,
-        tasks: featureTasks
       },
     });
 
@@ -351,13 +362,32 @@ function buildCombinedFlowData(structure: StructureData | null, markdown: string
       type: 'bezier',
       style: { stroke: '#475569', strokeWidth: 1.5 },
     });
+    
+    let nextAvailableY = featureStartY + 120; // Default gap below feature node if no subfeatures
+    
+    // If there are tasks for the feature itself, spawn them to the right (x * 2)
+    if (featureTasks.length > 0) {
+      const fTaskId = `${featureId}-tasks`;
+      nodes.push({
+        id: fTaskId,
+        type: 'taskListNode',
+        position: { x: X_SPACING * 2, y: featureStartY },
+        data: { title: feature.name, tasks: featureTasks }
+      });
+      edges.push({
+        id: `e-${featureId}-${fTaskId}`,
+        source: featureId,
+        target: fTaskId,
+        type: 'smoothstep',
+        animated: true,
+        style: { stroke: '#38bdf8', strokeWidth: 1.5 }, // cyan edge to task
+      });
+      const taskHeight = 50 + (featureTasks.length * 28);
+      nextAvailableY = Math.max(nextAvailableY, featureStartY + taskHeight + 20);
+    }
 
-    const fNodeHeight = 90 + (featureTasks.length * 28);
-    currentY += fNodeHeight + 30; // initial gap for subfeatures
-
-    // If feature has subfeatures, render them as well
     if (feature.subfeatures && feature.subfeatures.length > 0) {
-      let subY = featureNodeY; // start subfeatures roughly parallel to feature
+      let subY = nextAvailableY; 
 
       feature.subfeatures.forEach((sub, sIndex) => {
         const subId = `${featureId}-sub-${sIndex}`;
@@ -367,7 +397,7 @@ function buildCombinedFlowData(structure: StructureData | null, markdown: string
           id: subId,
           type: 'subfeatureTaskNode',
           position: { x: X_SPACING * 2, y: subY },
-          data: { name: sub.name, icon: sub.icon, tasks: subTasks },
+          data: { name: sub.name, icon: sub.icon },
         });
 
         edges.push({
@@ -375,31 +405,57 @@ function buildCombinedFlowData(structure: StructureData | null, markdown: string
           source: featureId,
           target: subId,
           type: 'smoothstep',
-          animated: true,
           style: { stroke: '#475569', strokeWidth: 1 },
         });
+        
+        let currentSubMaxY = subY + 70; // min height of subfeature node
+        
+        // Spawn Task node for Subfeature
+        if (subTasks.length > 0) {
+          const sTaskId = `${subId}-tasks`;
+          nodes.push({
+            id: sTaskId,
+            type: 'taskListNode',
+            position: { x: X_SPACING * 3, y: subY },
+            data: { title: sub.name, tasks: subTasks }
+          });
+          edges.push({
+            id: `e-${subId}-${sTaskId}`,
+            source: subId,
+            target: sTaskId,
+            type: 'smoothstep',
+            animated: true,
+            style: { stroke: '#38bdf8', strokeWidth: 1.5 },
+          });
+          
+          const taskHeight = 50 + (subTasks.length * 28);
+          currentSubMaxY = Math.max(currentSubMaxY, subY + taskHeight + 20);
+        }
 
-        const subNodeHeight = 50 + (subTasks.length * 28);
-        subY += subNodeHeight + 20;
+        subY = currentSubMaxY + 20;
       });
-
-      // Update currentY if subfeatures went further down than the feature node
-      currentY = Math.max(currentY, subY + 20);
+      
+      maxBlockY = subY;
+    } else {
+      maxBlockY = nextAvailableY;
     }
+
+    currentY = maxBlockY + 40; // Add gap between major feature blocks
   });
 
-  // Collect unused tasks (e.g. general tasks or AI generated sections not in WBS)
+  // Unused tasks
   const unusedCategories = parsedCategories.filter(c => !c.title.startsWith('_USED_'));
-  
   if (unusedCategories.length > 0) {
     const unusedTasks = unusedCategories.flatMap(c => c.tasks);
     if (unusedTasks.length > 0) {
       const extraId = 'feature-extra-general';
+      const extraTaskId = 'feature-extra-tasks';
+      
       nodes.push({
         id: extraId,
         type: 'featureTaskNode',
         position: { x: X_SPACING, y: currentY },
-        data: { label: 'Tugas Lainnya', icon: 'list-todo', phase: 'TAMBAHAN', tasks: unusedTasks }
+        data: { label: 'Tugas Lainnya', icon: 'list-todo', phase: 'TAMBAHAN' }
       });
       edges.push({
         id: `e-root-${extraId}`,
@@ -408,14 +464,28 @@ function buildCombinedFlowData(structure: StructureData | null, markdown: string
         type: 'bezier',
         style: { stroke: '#475569', strokeWidth: 1.5, strokeDasharray: '5 5' },
       });
-      currentY += 90 + (unusedTasks.length * 28) + 40;
+      
+      nodes.push({
+        id: extraTaskId,
+        type: 'taskListNode',
+        position: { x: X_SPACING * 2, y: currentY },
+        data: { title: 'Tugas Lainnya', tasks: unusedTasks }
+      });
+      edges.push({
+        id: `e-${extraId}-${extraTaskId}`,
+        source: extraId,
+        target: extraTaskId,
+        type: 'smoothstep',
+        animated: true,
+        style: { stroke: '#38bdf8', strokeWidth: 1.5 },
+      });
+      
+      currentY += 90 + (unusedTasks.length * 28) + 60;
     }
   }
 
-  // Center Root Node vertically
   if (nodes.length > 0) {
-    const totalHeight = currentY;
-    nodes[0].position.y = totalHeight / 2 - 40;
+    nodes[0].position.y = currentY / 2 - 40;
   }
 
   return { nodes, edges };
