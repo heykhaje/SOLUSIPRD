@@ -1,6 +1,7 @@
 import OpenAI from "openai";
 import { NextResponse } from "next/server";
 import { createClient } from "@/utils/supabase/server";
+import { createAdminClient } from "@/utils/supabase/admin";
 
 const DEFAULT_SYSTEM_PROMPT = `Anda adalah Product Manager senior. Ubah ide mentah ini menjadi dokumen PRD lengkap berformat Markdown yang berisi:
 1) Latar Belakang
@@ -133,7 +134,8 @@ export async function POST(request: Request) {
     }
 
     // 4.5 Fetch Dynamic System Prompt
-    const { data: promptData, error: promptError } = await supabase
+    const adminSupabase = createAdminClient();
+    const { data: promptData, error: promptError } = await adminSupabase
       .from('app_settings')
       .select('value')
       .eq('key', 'system_prompt')
