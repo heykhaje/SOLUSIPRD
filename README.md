@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="public/globe.svg" alt="Logo" width="80" height="80">
+  <img src="public/logo-solusiprd.png" alt="Logo" width="120" height="120">
   <h1 align="center">SOLUSIPRD</h1>
   <p align="center">
     <strong>AI-Powered Product Requirements Document (PRD) & WBS Generator</strong>
